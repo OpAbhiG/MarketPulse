@@ -1,0 +1,60 @@
+{
+  "symbol": "TRENT",
+  "name": "Trent Ltd",
+  "cap_segment": "mid",
+  "sector": "Retail",
+  "price": {
+    "live": 5120.0,
+    "day_open": 4980.54,
+    "day_high": 5212.16,
+    "day_low": 5027.84,
+    "prev_close": 4980.54,
+    "day_change_pct": 2.8,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 5333.33,
+    "low": 2969.6,
+    "pct_from_high": -4.0,
+    "position_pct": 94
+  },
+  "technicals": {
+    "rvol": 3.2,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 5273.6,
+    "swing_low": 4659.2,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "buy",
+    "num_analysts": 18,
+    "buy_pct": 91,
+    "hold_pct": 7,
+    "sell_pct": 1,
+    "target_mean": 6348.8,
+    "target_low": 4864.0,
+    "target_high": 6860.8,
+    "upside_pct": 24.0
+  },
+  "news": {
+    "total": 10,
+    "positive": 8,
+    "negative": 0,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

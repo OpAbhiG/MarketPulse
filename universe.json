@@ -1,0 +1,20 @@
+{
+  "large": [
+    "RELIANCE.NS",
+    "TCS.NS",
+    "HDFCBANK.NS",
+    "ICICIBANK.NS"
+  ],
+  "mid": [
+    "TRENT.NS",
+    "BEL.NS",
+    "POLYCAB.NS",
+    "VOLTAS.NS"
+  ],
+  "small": [
+    "CLEAN.NS",
+    "CDSL.NS",
+    "KAYNES.NS",
+    "BSE.NS"
+  ]
+}

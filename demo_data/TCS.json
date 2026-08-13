@@ -1,0 +1,60 @@
+{
+  "symbol": "TCS",
+  "name": "Tata Consultancy Services Ltd",
+  "cap_segment": "large",
+  "sector": "Information Technology",
+  "price": {
+    "live": 3012.2,
+    "day_open": 2991.26,
+    "day_high": 3066.42,
+    "day_low": 2957.98,
+    "prev_close": 2991.26,
+    "day_change_pct": 0.7,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 3399.77,
+    "low": 1747.08,
+    "pct_from_high": -11.4,
+    "position_pct": 73
+  },
+  "technicals": {
+    "rvol": 1.08,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 3102.57,
+    "swing_low": 2741.1,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "hold",
+    "num_analysts": 18,
+    "buy_pct": 78,
+    "hold_pct": 17,
+    "sell_pct": 4,
+    "target_mean": 3265.22,
+    "target_low": 2861.59,
+    "target_high": 3566.44,
+    "upside_pct": 8.4
+  },
+  "news": {
+    "total": 9,
+    "positive": 6,
+    "negative": 1,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

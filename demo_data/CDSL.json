@@ -1,0 +1,60 @@
+{
+  "symbol": "CDSL",
+  "name": "Central Depository Services Ltd",
+  "cap_segment": "small",
+  "sector": "Capital Markets",
+  "price": {
+    "live": 1785,
+    "day_open": 1726.31,
+    "day_high": 1817.13,
+    "day_low": 1752.87,
+    "prev_close": 1726.31,
+    "day_change_pct": 3.4,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 1817.72,
+    "low": 1035.3,
+    "pct_from_high": -1.8,
+    "position_pct": 97
+  },
+  "technicals": {
+    "rvol": 3.9,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 1838.55,
+    "swing_low": 1624.35,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "buy",
+    "num_analysts": 18,
+    "buy_pct": 94,
+    "hold_pct": 5,
+    "sell_pct": 1,
+    "target_mean": 2306.22,
+    "target_low": 1695.75,
+    "target_high": 2484.72,
+    "upside_pct": 29.2
+  },
+  "news": {
+    "total": 12,
+    "positive": 10,
+    "negative": 0,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

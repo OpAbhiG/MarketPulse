@@ -1,0 +1,60 @@
+{
+  "symbol": "VOLTAS",
+  "name": "Voltas Ltd",
+  "cap_segment": "mid",
+  "sector": "Consumer Durables",
+  "price": {
+    "live": 1410,
+    "day_open": 1421.37,
+    "day_high": 1435.38,
+    "day_low": 1384.62,
+    "prev_close": 1421.37,
+    "day_change_pct": -0.8,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 1855.26,
+    "low": 817.8,
+    "pct_from_high": -24.0,
+    "position_pct": 48
+  },
+  "technicals": {
+    "rvol": 0.91,
+    "price_vs_sma_pct": -2,
+    "window_return_pct": -10,
+    "swing_high": 1452.3,
+    "swing_low": 1283.1,
+    "day_range_position_pct": 28,
+    "trend": "down"
+  },
+  "analyst": {
+    "consensus": "hold",
+    "num_analysts": 18,
+    "buy_pct": 44,
+    "hold_pct": 21,
+    "sell_pct": 15,
+    "target_mean": 1374.75,
+    "target_low": 1339.5,
+    "target_high": 1515.75,
+    "upside_pct": -2.5
+  },
+  "news": {
+    "total": 9,
+    "positive": 3,
+    "negative": 4,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

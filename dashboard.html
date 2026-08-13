@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MarketPulse · Indian Stock Agents Panel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    :root {
+      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --bg-primary: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border-color: #e2e8f0;
+      
+      /* State Colors */
+      --color-offline: #64748b;
+      --color-working: #3b82f6;
+      --color-done: #10b981;
+      
+      --color-buy: #10b981;
+      --color-watch: #f59e0b;
+      --color-avoid: #ef4444;
+      
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
+      background-attachment: fixed;
+      font-family: var(--font-sans);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 60px;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: auto;
+      padding: 40px 24px;
+    }
+
+    /* Header */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand {
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: -0.6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand span {
+      font-weight: 400;
+      font-size: 15px;
+      color: var(--text-secondary);
+      border-left: 1.5px solid var(--border-color);
+      padding-left: 12px;
+      margin-left: 4px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      height: 42px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 0 20px;
+      font-weight: 700;
+      font-size: 14px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease-in-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: var(--text-primary);
+      border: 1.5px solid var(--border-color);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    /* Stepper */
+    .stepper {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(8px);
+      overflow-x: auto;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      transition: color 0.3s;
+    }
+
+    .step-item.active {
+      color: var(--color-working);
+    }
+
+    .step-item.completed {
+      color: var(--color-done);
+    }
+
+    .step-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 800;
+      transition: all 0.3s;
+    }
+
+    .step-item.active .step-dot {
+      background: #eff6ff;
+      color: var(--color-working);
+      border: 2px solid var(--color-working);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .step-item.completed .step-dot {
+      background: #ecfdf5;
+      color: var(--color-done);
+      border: 2px solid var(--color-done);
+    }
+
+    .step-connector {
+      flex-grow: 1;
+      height: 2px;
+      background: #e2e8f0;
+      margin: 0 12px;
+      min-width: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .step-connector.active {
+      background: var(--color-working);
+    }
+
+    .step-connector.completed {
+      background: var(--color-done);
+    }
+
+    /* KPIs */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi {
+      padding: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+
+    .kpi::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: transparent;
+    }
+
+    .kpi:nth-child(1)::before { background: var(--color-working); }
+    .kpi:nth-child(2)::before { background: #8b5cf6; }
+    .kpi:nth-child(3)::before { background: var(--color-done); }
+    .kpi:nth-child(4)::before { background: var(--color-watch); }
+
+    .kpi:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .big {
+      font-size: 30px;
+      font-weight: 800;
+      margin-top: 6px;
+      letter-spacing: -0.6px;
+      color: var(--text-primary);
+    }
+
+    .sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Agents */
+    .agents {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .agent {
+      padding: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 164px;
+      backdrop-filter: blur(8px);
+    }
+
+    .agent:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: #cbd5e1;
+    }
+
+    .agent.active-agent {
+      border-color: var(--color-working);
+      box-shadow: 0 0 15px -3px rgba(59, 130, 246, 0.25), var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .agent-head {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      display: grid;
+      place-items: center;
+      color: var(--text-secondary);
+      transition: all 0.3s;
+    }
+
+    .agent.working .icon {
+      background: #eff6ff;
+      color: var(--color-working);
+    }
+
+    .agent.done .icon {
+      background: #ecfdf5;
+      color: var(--color-done);
+    }
+
+    .name {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.2px;
+    }
+
+    .role {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    .status {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      transition: all 0.3s;
+    }
+
+    .agent.working .status {
+      background: #eff6ff;
+      color: var(--color-working);
+    }
+
+    .agent.done .status {
+      background: #ecfdf5;
+      color: var(--color-done);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #94a3b8;
+      display: inline-block;
+    }
+
+    .agent.working .dot {
+      background: var(--color-working);
+      animation: pulse 1s infinite alternate;
+    }
+
+    .agent.done .dot {
+      background: var(--color-done);
+    }
+
+    /* Micro-bars */
+    .bars {
+      height: 14px;
+      margin: 14px 0;
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+    }
+
+    .bars i {
+      display: block;
+      width: 4px;
+      height: 3px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      transition: all 0.3s;
+    }
+
+    .agent.working .bars i {
+      animation: barHeight 0.6s infinite alternate;
+      background: #93c5fd;
+    }
+
+    .agent.working .bars i:nth-child(2) { animation-delay: 0.12s; }
+    .agent.working .bars i:nth-child(3) { animation-delay: 0.24s; }
+    .agent.working .bars i:nth-child(4) { animation-delay: 0.36s; }
+
+    .agent.done .bars i {
+      background: #a7f3d0;
+      height: 8px !important;
+    }
+
+    @keyframes barHeight {
+      from { height: 3px; }
+      to { height: 14px; }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 10px;
+    }
+
+    .statv {
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 1px;
+    }
+
+    /* Filters Bar */
+    .filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .search-input {
+      height: 40px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0 14px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      width: 100%;
+      max-width: 320px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--color-working);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .filter-tabs {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .filter-tab {
+      border: none;
+      background: none;
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-tab.active {
+      background: #ffffff;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Feed Card & Verdict List */
+    .feed {
+      margin-top: 24px;
+    }
+
+    .feed-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .feed-title h2 {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.3px;
+    }
+
+    .feed-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr 0.8fr 2.5fr 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 20px;
+      border-top: 1px solid #f1f5f9;
+      transition: background 0.15s ease;
+    }
+
+    .row:first-child {
+      border-top: none;
+    }
+
+    .row:hover {
+      background: #f8fafc;
+    }
+
+    .sym {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.2px;
+    }
+
+    .cap {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      justify-content: center;
+      width: max-content;
+    }
+
+    .badge.buy {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge.watch {
+      background: #fef9c3;
+      color: #854d0e;
+      border: 1px solid #fef08a;
+    }
+
+    .badge.avoid {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .why {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .price {
+      text-align: right;
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .change {
+      font-size: 11px;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .up { color: var(--color-buy); }
+    .down { color: var(--color-avoid); }
+
+    .empty {
+      padding: 40px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Logs Section */
+    .logs-section {
+      margin-top: 32px;
+    }
+
+    .logs-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px 20px;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .log-entry {
+      line-height: 1.6;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 4px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .log-msg {
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    /* Modals & Backdrop */
+    .backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: #ffffff;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 680px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border-color);
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .backdrop.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .modal-close:hover {
+      background: #e2e8f0;
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* Config Form Drawer */
+    .drawer-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.3);
+      backdrop-filter: blur(2px);
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -460px;
+      width: 100%;
+      max-width: 460px;
+      height: 100vh;
+      background: #ffffff;
+      box-shadow: -10px 0 30px -5px rgba(15, 23, 42, 0.08);
+      border-left: 1px solid var(--border-color);
+      z-index: 950;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+    }
+
+    .drawer-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .drawer-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+      background: #f8fafc;
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 38px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--color-working);
+    }
+
+    .form-textarea {
+      width: 100%;
+      height: 70px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+      resize: vertical;
+      transition: all 0.2s;
+    }
+
+    .form-textarea:focus {
+      border-color: var(--color-working);
+    }
+
+    /* Debate Details inside Modal */
+    .debate-agent-row {
+      margin-bottom: 18px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 14px;
+    }
+
+    .debate-agent-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .agent-badge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .agent-badge-name {
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-conviction {
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .conviction-meter-bg {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .conviction-meter-fill {
+      height: 100%;
+      background: var(--color-working);
+      border-radius: 3px;
+      transition: width 0.4s ease-out;
+    }
+
+    .agent-statement {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      padding-left: 28px;
+      margin: 0;
+    }
+
+    /* Footer */
+    footer {
+      padding-top: 20px;
+      margin-top: 40px;
+      border-top: 1px solid var(--border-color);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.35; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* Responsive */
+    @media(max-width:1024px) {
+      .kpis, .agents {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media(max-width:768px) {
+      .row {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .why {
+        grid-column: 1/-1;
+      }
+      .price {
+        text-align: left;
+      }
+      footer {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+      }
+    }
+
+    @media(max-width:480px) {
+      .kpis, .agents {
+        grid-template-columns: 1fr;
+      }
+      .top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .controls {
+        width: 100%;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="brand" id="brand">
+        MarketPulse <span>· Indian stock analysis · <b id="agentCount">8</b> agents on duty</span>
+      </div>
+      <div class="controls">
+        <button id="openConfigBtn" class="btn btn-secondary">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Configure universe
+        </button>
+        <button id="start" class="btn">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Start agents
+        </button>
+      </div>
+    </header>
+
+    <!-- Pipeline Visual Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step-item" id="step-scout"><span class="step-dot">1</span>Scout</div>
+      <div class="step-connector" id="conn-scout"></div>
+      <div class="step-item" id="step-technician"><span class="step-dot">2</span>Technician</div>
+      <div class="step-connector" id="conn-technician"></div>
+      <div class="step-item" id="step-fundamentalist"><span class="step-dot">3</span>Fundamentalist</div>
+      <div class="step-connector" id="conn-fundamentalist"></div>
+      <div class="step-item" id="step-newsdesk"><span class="step-dot">4</span>Newsdesk</div>
+      <div class="step-connector" id="conn-newsdesk"></div>
+      <div class="step-item" id="step-debate"><span class="step-dot">5</span>Debate</div>
+      <div class="step-connector" id="conn-debate"></div>
+      <div class="step-item" id="step-judge"><span class="step-dot">6</span>Judge</div>
+      <div class="step-connector" id="conn-judge"></div>
+      <div class="step-item" id="step-messenger"><span class="step-dot">7</span>Messenger</div>
+    </div>
+
+    <section class="kpis">
+      <div class="card kpi">
+        <div class="label">Universe</div>
+        <div class="big" id="universe">0</div>
+        <div class="sub">stocks scanned</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">In debate</div>
+        <div class="big" id="debate">0</div>
+        <div class="sub">shortlisted</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">Buy signals</div>
+        <div class="big" id="buys">0</div>
+        <div class="sub">threshold-qualified</div>
+      </div>
+      <div class="card kpi">
+        <div class="label">Top pick</div>
+        <div class="big" id="top">—</div>
+        <div class="sub" id="topSub">confidence —</div>
+      </div>
+    </section>
+
+    <section class="agents" id="agents"></section>
+
+    <section class="feed">
+      <div class="feed-title">
+        <h2>Latest verdicts</h2>
+        <div class="hint" id="runMeta">Idle · live engine config</div>
+      </div>
+      
+      <!-- Interactive filters bar -->
+      <div class="filter-bar">
+        <input type="text" id="searchBar" class="search-input" placeholder="Search symbol or name...">
+        <div class="filter-group">
+          <select id="capFilter" class="select" style="height:40px; font-size:12px;">
+            <option value="all">All Caps</option>
+            <option value="large">Large Cap</option>
+            <option value="mid">Mid Cap</option>
+            <option value="small">Small Cap</option>
+          </select>
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-verdict="all">All</button>
+            <button class="filter-tab" data-verdict="buy">BUY</button>
+            <button class="filter-tab" data-verdict="watch">WATCH</button>
+            <button class="filter-tab" data-verdict="avoid">AVOID</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="feed-card" id="feed">
+        <div class="empty">Press “Start agents” to run the panel.</div>
+      </div>
+    </section>
+
+    <section class="logs-section">
+      <div class="feed-title">
+        <h2>Audit Trail</h2>
+      </div>
+      <div class="logs-card" id="logs">
+        <div style="color:var(--text-muted);text-align:center;padding:20px;">Logs will appear here once agents are triggered...</div>
+      </div>
+    </section>
+
+    <footer>
+      <div id="footerLeft">Built from 0 real stocks · data pulled — IST</div>
+      <div id="footerRight">engine: —</div>
+    </footer>
+  </main>
+
+  <!-- Interactive Configuration Drawer -->
+  <div class="drawer-backdrop" id="drawerBackdrop">
+    <div class="drawer" id="drawer">
+      <div class="drawer-header">
+        <h3 style="margin:0; font-size:16px; font-weight:800;">Panel & Universe Settings</h3>
+        <button class="modal-close" id="closeDrawerBtn">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <h4 style="margin:0 0 16px 0; font-size:13px; color:var(--color-working); text-transform:uppercase; letter-spacing:0.04em;">Configuration Variables</h4>
+        <div class="form-group">
+          <label class="form-label" for="configBrand">Brand Name</label>
+          <input type="text" id="configBrand" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configLlmProvider">LLM Provider</label>
+          <select id="configLlmProvider" class="form-input" style="height:38px; padding:0 8px;">
+            <option value="auto">Auto-detect (Preferred)</option>
+            <option value="claude_code">Claude Code CLI</option>
+            <option value="anthropic">Anthropic API Key</option>
+            <option value="openai">OpenAI API Key</option>
+            <option value="deterministic">Deterministic Fallback Only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configThreshold">Confidence Threshold (BUY Trigger)</label>
+          <input type="number" min="1" max="10" id="configThreshold" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configDelay">Visual Pacing Delay (Seconds)</label>
+          <input type="number" step="0.05" min="0" id="configDelay" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configShortlist">Shortlist Per Bucket</label>
+          <input type="number" min="1" id="configShortlist" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configTelegramToken">Telegram Bot Token</label>
+          <input type="password" id="configTelegramToken" class="form-input" placeholder="Token from @BotFather">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configTelegramChatId">Telegram Chat ID</label>
+          <input type="text" id="configTelegramChatId" class="form-input" placeholder="Chat ID from @userinfobot">
+        </div>
+
+        <h4 style="margin:24px 0 16px 0; font-size:13px; color:var(--color-working); text-transform:uppercase; letter-spacing:0.04em;">Stock Universe Tickers</h4>
+        <div class="form-group">
+          <label class="form-label" for="configLargeCaps">Large Caps Tickers (Comma separated)</label>
+          <textarea id="configLargeCaps" class="form-textarea"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configMidCaps">Mid Caps Tickers</label>
+          <textarea id="configMidCaps" class="form-textarea"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="configSmallCaps">Small Caps Tickers</label>
+          <textarea id="configSmallCaps" class="form-textarea"></textarea>
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button class="btn btn-secondary" style="flex:1;" id="cancelDrawerBtn">Cancel</button>
+        <button class="btn" style="flex:1.5;" id="saveConfigBtn">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Debate Breakdown Modal -->
+  <div class="backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">RELIANCE <span class="badge buy" id="modalVerdict">BUY</span></div>
+        <button class="modal-close" id="closeModalBtn">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Inside populated by JS dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const agentIcons = {
+      scout: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>`,
+      technician: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`,
+      fundamentalist: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
+      newsdesk: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>`,
+      bull: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>`,
+      bear: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/></svg>`,
+      judge: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>`,
+      messenger: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>`
+    };
+
+    let cfg = {};
+    let localVerdicts = [];
+    let activeFilters = {
+      search: '',
+      verdict: 'all',
+      cap: 'all'
+    };
+
+    // Load configs from API
+    async function load() {
+      try {
+        cfg = await fetch('/config').then(r => r.json());
+        document.getElementById('brand').innerHTML = `${cfg.brand} <span>· Indian stock analysis · <b>8</b> agents on duty</span>`;
+        
+        // Populating drawer form fields
+        document.getElementById('configBrand').value = cfg.brand || '';
+        document.getElementById('configLlmProvider').value = cfg.llm_provider || 'auto';
+        document.getElementById('configThreshold').value = cfg.confidence_threshold || 7;
+        document.getElementById('configDelay').value = cfg.agent_delay || 0.35;
+        document.getElementById('configShortlist').value = cfg.shortlist_per_bucket || 4;
+        document.getElementById('configTelegramToken').value = cfg.telegram_bot_token || '';
+        document.getElementById('configTelegramChatId').value = cfg.telegram_chat_id || '';
+        
+        if (cfg.universe) {
+          document.getElementById('configLargeCaps').value = (cfg.universe.large || []).join(', ');
+          document.getElementById('configMidCaps').value = (cfg.universe.mid || []).join(', ');
+          document.getElementById('configSmallCaps').value = (cfg.universe.small || []).join(', ');
+        }
+      } catch (e) {
+        console.error("Failed to load configuration", e);
+      }
+    }
+
+    // Modal drawer actions
+    function openDrawer() {
+      document.getElementById('drawerBackdrop').classList.add('open');
+      document.getElementById('drawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerBackdrop').classList.remove('open');
+      document.getElementById('drawer').classList.remove('open');
+    }
+
+    document.getElementById('openConfigBtn').onclick = openDrawer;
+    document.getElementById('closeDrawerBtn').onclick = closeDrawer;
+    document.getElementById('cancelDrawerBtn').onclick = closeDrawer;
+    document.getElementById('drawerBackdrop').onclick = (e) => {
+      if (e.target.id === 'drawerBackdrop') closeDrawer();
+    };
+
+    // Save configuration
+    document.getElementById('saveConfigBtn').onclick = async () => {
+      const saveBtn = document.getElementById('saveConfigBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      const largeTickers = document.getElementById('configLargeCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      const midTickers = document.getElementById('configMidCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      const smallTickers = document.getElementById('configSmallCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      
+      const payload = {
+        brand: document.getElementById('configBrand').value,
+        llm_provider: document.getElementById('configLlmProvider').value,
+        confidence_threshold: parseInt(document.getElementById('configThreshold').value, 10),
+        agent_delay: parseFloat(document.getElementById('configDelay').value),
+        shortlist_per_bucket: parseInt(document.getElementById('configShortlist').value, 10),
+        telegram_bot_token: document.getElementById('configTelegramToken').value,
+        telegram_chat_id: document.getElementById('configTelegramChatId').value,
+        universe: {
+          large: largeTickers,
+          mid: midTickers,
+          small: smallTickers
+        }
+      };
+      
+      try {
+        const res = await fetch('/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+        
+        if (res.ok) {
+          alert('Settings saved & hot-reloaded successfully!');
+          closeDrawer();
+          await load();
+        } else {
+          alert('Error: ' + res.error);
+        }
+      } catch (e) {
+        alert('Server connection failed: ' + e);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Configuration';
+      }
+    };
+
+    // Debate details modal actions
+    function openDebateModal(symbol) {
+      const v = localVerdicts.find(x => x.symbol === symbol);
+      if (!v) return;
+
+      document.getElementById('modalTitle').innerHTML = `${v.symbol} <span style="font-size:13px; font-weight:normal; color:var(--text-secondary);">(${v.name})</span> <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>`;
+      
+      let agentsHtml = '';
+      const order = [
+        { key: 'bull', name: 'Bull Agent', color: 'var(--color-buy)', icon: agentIcons.bull },
+        { key: 'bear', name: 'Bear Agent', color: 'var(--color-avoid)', icon: agentIcons.bear },
+        { key: 'technician', name: 'Technician', color: '#10b981', icon: agentIcons.technician },
+        { key: 'fundamentalist', name: 'Fundamentalist', color: '#8b5cf6', icon: agentIcons.fundamentalist },
+        { key: 'newsdesk', name: 'Newsdesk', color: '#f59e0b', icon: agentIcons.newsdesk }
+      ];
+
+      if (v.scores && Object.keys(v.scores).length) {
+        order.forEach(agent => {
+          const scoreData = v.scores[agent.key] || {};
+          const score = scoreData.score || 0;
+          const points = scoreData.reasons || ['data unavailable'];
+          
+          agentsHtml += `
+            <div class="debate-agent-row">
+              <div class="agent-badge-header">
+                <div class="agent-badge-name" style="color: ${agent.color}">
+                  ${agent.icon}
+                  ${agent.name}
+                </div>
+                <div class="agent-conviction" style="color: ${agent.color}">Conviction: ${score}%</div>
+              </div>
+              <div class="conviction-meter-bg">
+                <div class="conviction-meter-fill" style="width: ${score}%; background: ${agent.color}"></div>
+              </div>
+              <p class="agent-statement">${points.join('<br>• ')}</p>
+            </div>
+          `;
+        });
+      } else {
+        agentsHtml = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Debate detail data unavailable for this verdict.</div>`;
+      }
+
+      // Add Judge verdict at the top
+      let judgeHtml = `
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-bottom:20px;">
+          <h4 style="margin:0 0 8px 0; font-size:14px; display:flex; align-items:center; gap:8px; color:var(--text-primary);">
+            ${agentIcons.judge}
+            Judge Final Verdict: <span class="badge ${v.verdict.toLowerCase()}" style="margin-left:4px;">${v.verdict}</span>
+          </h4>
+          <p style="font-size:13px; font-weight:500; margin:0 0 10px 0; line-height:1.45; color:var(--text-secondary);">${v.why || 'No explanation provided.'}</p>
+          ${v.catalyst && v.catalyst !== 'data unavailable' ? `
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Top Catalyst Reason</div>
+            <div style="font-size:13px; color:#4f46e5; font-weight:600; margin-bottom:12px;">${v.catalyst}</div>
+          ` : ''}
+          ${v.buy_zone || v.target || v.stop_loss ? `
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Trade Setup Guide</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
+              <div style="background:#eaf8f0; border:1px solid #a7f3d0; border-radius:10px; padding:8px 12px; text-align:center;">
+                <div style="font-size:10px; color:#065f46; font-weight:800; text-transform:uppercase;">Buy Zone</div>
+                <div style="font-size:13px; font-weight:700; color:#065f46; margin-top:2px;">${v.buy_zone || '—'}</div>
+              </div>
+              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:8px 12px; text-align:center;">
+                <div style="font-size:10px; color:#854d0e; font-weight:800; text-transform:uppercase;">Target Price</div>
+                <div style="font-size:13px; font-weight:700; color:#854d0e; margin-top:2px;">${v.target || '—'}</div>
+              </div>
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:8px 12px; text-align:center;">
+                <div style="font-size:10px; color:#991b1b; font-weight:800; text-transform:uppercase;">Stop Loss</div>
+                <div style="font-size:13px; font-weight:700; color:#991b1b; margin-top:2px;">${v.stop_loss || '—'}</div>
+              </div>
+            </div>
+          ` : ''}
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); font-size:11px; color:var(--text-muted);">
+            <div>Winner Conviction: <b>${v.winner}</b> | Confidence: <b>${v.confidence}/10</b></div>
+            <div>Verifier: <b>${v.verifier_ok ? '<span style="color:var(--color-done)">✓ Grounded</span>' : '<span style="color:var(--color-watch)">⚠ Fallback</span>'}</b></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalBody').innerHTML = judgeHtml + `
+        <h4 style="margin:0 0 12px 0; font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary);">Agent Debates</h4>
+        <div>${agentsHtml}</div>
+      `;
+
+      document.getElementById('modalBackdrop').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+    }
+
+    document.getElementById('closeModalBtn').onclick = closeModal;
+    document.getElementById('modalBackdrop').onclick = (e) => {
+      if (e.target.id === 'modalBackdrop') closeModal();
+    };
+
+    // Client-side filtering logic
+    function applyFilters() {
+      const searchVal = activeFilters.search.toLowerCase();
+      const rows = document.querySelectorAll('.verdict-row');
+      let visibleCount = 0;
+      
+      rows.forEach(row => {
+        const symbol = row.getAttribute('data-symbol').toLowerCase();
+        const name = row.getAttribute('data-name').toLowerCase();
+        const verdict = row.getAttribute('data-verdict').toLowerCase();
+        const cap = row.getAttribute('data-cap').toLowerCase();
+        
+        const matchesSearch = !searchVal || symbol.includes(searchVal) || name.includes(searchVal);
+        const matchesVerdict = activeFilters.verdict === 'all' || verdict === activeFilters.verdict;
+        const matchesCap = activeFilters.cap === 'all' || cap === activeFilters.cap;
+        
+        if (matchesSearch && matchesVerdict && matchesCap) {
+          row.style.display = 'grid';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      // Show/hide empty state
+      const emptyFeedEl = document.getElementById('empty-feed-placeholder');
+      if (rows.length > 0 && visibleCount === 0) {
+        if (!emptyFeedEl) {
+          const div = document.createElement('div');
+          div.id = 'empty-feed-placeholder';
+          div.className = 'empty';
+          div.textContent = 'No verdicts match your filter criteria.';
+          document.getElementById('feed').appendChild(div);
+        }
+      } else if (emptyFeedEl) {
+        emptyFeedEl.remove();
+      }
+    }
+
+    // Set up filter event listeners
+    document.getElementById('searchBar').oninput = (e) => {
+      activeFilters.search = e.target.value;
+      applyFilters();
+    };
+
+    document.getElementById('capFilter').onchange = (e) => {
+      activeFilters.cap = e.target.value;
+      applyFilters();
+    };
+
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.onclick = (e) => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeFilters.verdict = tab.getAttribute('data-verdict');
+        applyFilters();
+      };
+    });
+
+    // Update the Pipeline Stepper visual states
+    function updateStepper(activeStep, isRunning) {
+      const steps = ['scout', 'technician', 'fundamentalist', 'newsdesk', 'debate', 'judge', 'messenger'];
+      const activeIdx = steps.indexOf(activeStep);
+      
+      steps.forEach((step, idx) => {
+        const stepEl = document.getElementById(`step-${step}`);
+        const connEl = document.getElementById(`conn-${step}`);
+        const agentCard = document.querySelector(`.agent[id="${step}"]`);
+        
+        if (stepEl) {
+          stepEl.classList.remove('active', 'completed');
+          if (isRunning) {
+            if (idx < activeIdx) stepEl.classList.add('completed');
+            else if (idx === activeIdx) stepEl.classList.add('active');
+          } else {
+            if (activeStep === 'done') stepEl.classList.add('completed');
+          }
+        }
+        
+        if (connEl) {
+          connEl.classList.remove('active', 'completed');
+          if (isRunning) {
+            if (idx < activeIdx) connEl.classList.add('completed');
+            else if (idx === activeIdx) connEl.classList.add('active');
+          } else {
+            if (activeStep === 'done') connEl.classList.add('completed');
+          }
+        }
+
+        // Highlight agent cards dynamically during pipeline steps
+        if (agentCard) {
+          agentCard.classList.remove('active-agent');
+          if (isRunning) {
+            if (step === activeStep || 
+               (activeStep === 'debate' && (step === 'bull' || step === 'bear'))) {
+              agentCard.classList.add('active-agent');
+            }
+          }
+        }
+      });
+    }
+
+    function renderAgents(a) {
+      document.getElementById('agents').innerHTML = Object.values(a).map(x => `
+        <div class="card agent ${x.status}" id="${x.id}">
+          <div class="agent-head">
+            <div class="icon">${agentIcons[x.id] || ''}</div>
+            <div>
+              <div class="name">${x.name}</div>
+              <div class="role">${x.role}</div>
+            </div>
+            <div class="status"><i class="dot"></i>${x.status}</div>
+          </div>
+          <div class="bars"><i></i><i></i><i></i><i></i></div>
+          <div class="stats">
+            <div>
+              <div class="label">${x.stat1_label}</div>
+              <div class="statv">${x.stat1}</div>
+            </div>
+            <div>
+              <div class="label">${x.stat2_label}</div>
+              <div class="statv">${x.stat2}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Main status rendering
+    function render(s) {
+      // KPIs
+      document.getElementById('universe').textContent = s.kpis.universe;
+      document.getElementById('debate').textContent = s.kpis.debate;
+      document.getElementById('buys').textContent = s.kpis.buy_signals;
+      document.getElementById('top').textContent = s.kpis.top_pick?.symbol || '—';
+      document.getElementById('topSub').textContent = s.kpis.top_pick ? `confidence ${s.kpis.top_pick.confidence}/10` : 'confidence —';
+      
+      // Agents
+      renderAgents(s.agents);
+      
+      // Update Stepper & highlights
+      updateStepper(s.active_step, s.running);
+
+      // Verdicts list
+      localVerdicts = s.verdicts || [];
+      document.getElementById('feed').innerHTML = localVerdicts.length ? 
+        localVerdicts.slice().reverse().map(v => `
+          <div class="row verdict-row" data-symbol="${v.symbol}" data-name="${v.name}" data-verdict="${v.verdict}" data-cap="${v.cap_segment}" onclick="openDebateModal('${v.symbol}')" style="cursor:pointer;">
+            <div>
+              <div class="sym">${v.symbol}</div>
+              <div class="cap">${v.cap_segment} cap</div>
+            </div>
+            <div>
+              <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
+            </div>
+            <div>
+              <b>${v.confidence}/10</b>
+              <div class="cap">${v.winner}</div>
+              <div style="font-size: 10px; font-weight: 600; margin-top: 3px;">
+                ${v.verifier_ok ? '<span style="color:var(--color-done)">✓ Grounded</span>' : '<span style="color:var(--color-watch)">⚠ Fallback</span>'}
+              </div>
+            </div>
+            <div class="why">
+              ${v.why || 'data unavailable'}
+              ${v.catalyst && v.catalyst !== 'data unavailable' ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Catalyst: ${v.catalyst}</div>` : ''}
+              ${v.buy_zone || v.target || v.stop_loss ? `
+                <div style="margin-top:8px; padding:6px 12px; background:#eff6ff; border:1px solid #dbeafe; border-radius:8px; font-size:12px; display:inline-block; font-weight:500;">
+                  <span style="color:#1d4ed8; font-weight:700;">Buy Zone:</span> ${v.buy_zone || '—'} | 
+                  <span style="color:#b45309; font-weight:700;">Target:</span> ${v.target || '—'} | 
+                  <span style="color:#b91c1c; font-weight:700;">Stop Loss:</span> ${v.stop_loss || '—'}
+                </div>
+              ` : ''}
+              <div style="font-size: 10px; color:#4f46e5; font-weight:700; margin-top:5px; text-transform:uppercase;">Click to view agent debates ➔</div>
+            </div>
+            <div class="price">
+              ₹${v.price ?? '—'}
+              <div class="change ${v.day_change_pct >= 0 ? 'up' : 'down'}">
+                ${v.day_change_pct == null ? '—' : (v.day_change_pct > 0 ? '+' : '') + v.day_change_pct + '%'}
+              </div>
+            </div>
+          </div>
+        `).join('') : 
+        `<div class="empty">${s.running ? 'Waiting for evidence…' : 'No verdicts yet.'}</div>`;
+      
+      applyFilters();
+
+      // Status info
+      document.getElementById('runMeta').textContent = s.running ? 
+        `Running cycle... · engine: ${s.engine}` : 
+        `${s.completed_at ? 'Completed at ' + new Date(s.completed_at).toLocaleTimeString('en-IN') : 'Idle'} · engine: ${s.engine}`;
+      
+      // Timeline logs
+      let logs = s.log || [];
+      document.getElementById('logs').innerHTML = logs.length ? 
+        logs.map(l => {
+          let parts = l.split(' · ');
+          let time = parts[0] || '';
+          let msg = parts.slice(1).join(' · ') || '';
+          let dObj = new Date(time);
+          let timeStr = isNaN(dObj.getTime()) ? time : dObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          return `<div class="log-entry"><span class="log-time">[${timeStr}]</span> <span class="log-msg">${msg}</span></div>`;
+        }).join('') : 
+        `<div style="color:var(--text-muted);text-align:center;padding:20px;">No logs yet. Waiting to start...</div>`;
+      
+      // Auto-scroll logs to bottom
+      if (s.running) {
+        let logsCard = document.getElementById('logs');
+        logsCard.scrollTop = logsCard.scrollHeight;
+      }
+
+      // Footer
+      let pulledStr = '—';
+      if (s.updated_at) {
+        let d = new Date(s.updated_at);
+        if (!isNaN(d.getTime())) {
+          pulledStr = d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+      }
+      document.getElementById('footerLeft').textContent = `Built from ${s.kpis.universe} real stocks · data pulled ${pulledStr} IST`;
+      document.getElementById('footerRight').textContent = `engine: ${s.engine}`;
+      
+      // Control disabling
+      document.getElementById('start').disabled = s.running;
+    }
+
+    async function poll() {
+      try {
+        let s = await fetch('/status').then(r => r.json());
+        render(s);
+      } catch (e) {
+        console.error("Poll error", e);
+      }
+      setTimeout(poll, 500);
+    }
+
+    // Trigger agents run
+    document.getElementById('start').onclick = async () => {
+      try {
+        await fetch('/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+      } catch (e) {
+        console.error("Start error", e);
+      }
+    };
+
+    load();
+    poll();
+  </script>
+</body>
+</html>

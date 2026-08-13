@@ -1,0 +1,60 @@
+{
+  "symbol": "BEL",
+  "name": "Bharat Electronics Ltd",
+  "cap_segment": "mid",
+  "sector": "Industrials",
+  "price": {
+    "live": 392.5,
+    "day_open": 385.18,
+    "day_high": 399.56,
+    "day_low": 385.44,
+    "prev_close": 385.18,
+    "day_change_pct": 1.9,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 422.5,
+    "low": 227.65,
+    "pct_from_high": -7.1,
+    "position_pct": 89
+  },
+  "technicals": {
+    "rvol": 1.65,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 404.28,
+    "swing_low": 357.18,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "buy",
+    "num_analysts": 18,
+    "buy_pct": 86,
+    "hold_pct": 8,
+    "sell_pct": 1,
+    "target_mean": 463.94,
+    "target_low": 372.88,
+    "target_high": 503.19,
+    "upside_pct": 18.2
+  },
+  "news": {
+    "total": 12,
+    "positive": 9,
+    "negative": 1,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "symbol": "KAYNES",
+  "name": "Kaynes Technology India Ltd",
+  "cap_segment": "small",
+  "sector": "Electronics",
+  "price": {
+    "live": 6180,
+    "day_open": 6029.27,
+    "day_high": 6291.24,
+    "day_low": 6068.76,
+    "prev_close": 6029.27,
+    "day_change_pct": 2.5,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 6518.99,
+    "low": 3584.4,
+    "pct_from_high": -5.2,
+    "position_pct": 92
+  },
+  "technicals": {
+    "rvol": 2.7,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 6365.4,
+    "swing_low": 5623.8,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "buy",
+    "num_analysts": 18,
+    "buy_pct": 90,
+    "hold_pct": 6,
+    "sell_pct": 1,
+    "target_mean": 7483.98,
+    "target_low": 5871.0,
+    "target_high": 8101.98,
+    "upside_pct": 21.1
+  },
+  "news": {
+    "total": 11,
+    "positive": 9,
+    "negative": 0,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}

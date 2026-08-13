@@ -1,0 +1,60 @@
+{
+  "symbol": "CLEAN",
+  "name": "Clean Science and Technology Ltd",
+  "cap_segment": "small",
+  "sector": "Specialty Chemicals",
+  "price": {
+    "live": 1380,
+    "day_open": 1363.64,
+    "day_high": 1404.84,
+    "day_low": 1355.16,
+    "prev_close": 1363.64,
+    "day_change_pct": 1.2,
+    "volume": 12000000
+  },
+  "range_52w": {
+    "high": 1568.18,
+    "low": 800.4,
+    "pct_from_high": -12.0,
+    "position_pct": 79
+  },
+  "technicals": {
+    "rvol": 1.45,
+    "price_vs_sma_pct": 3,
+    "window_return_pct": 14,
+    "swing_high": 1421.4,
+    "swing_low": 1255.8,
+    "day_range_position_pct": 78,
+    "trend": "up"
+  },
+  "analyst": {
+    "consensus": "hold",
+    "num_analysts": 18,
+    "buy_pct": 76,
+    "hold_pct": 10,
+    "sell_pct": 4,
+    "target_mean": 1566.3,
+    "target_low": 1311.0,
+    "target_high": 1704.3,
+    "upside_pct": 13.5
+  },
+  "news": {
+    "total": 9,
+    "positive": 6,
+    "negative": 1,
+    "neutral": 2,
+    "recent": [
+      {
+        "title": "Company update and sector developments",
+        "publisher": "Demo bundle"
+      },
+      {
+        "title": "Market commentary",
+        "publisher": "Demo bundle"
+      }
+    ]
+  },
+  "data_gaps": [
+    "analyst.raw valuation ratios: P/E, ROE not provided by this feed"
+  ]
+}
