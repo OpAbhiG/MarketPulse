@@ -1116,17 +1116,17 @@
         </div>
 
         <h4 style="margin:24px 0 16px 0; font-size:13px; color:var(--color-working); text-transform:uppercase; letter-spacing:0.04em;">Stock Universe Tickers</h4>
-        <div class="form-group">
-          <label class="form-label" for="configLargeCaps">Large Caps Tickers (Comma separated)</label>
-          <textarea id="configLargeCaps" class="form-textarea"></textarea>
+        <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11px; flex: 1; justify-content: center;" onclick="window.loadRecommendedUniverse()">
+            Load Recommended Picks
+          </button>
+          <button type="button" class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11px; flex: 1; justify-content: center;" onclick="window.clearUniverseInput()">
+            Clear All
+          </button>
         </div>
         <div class="form-group">
-          <label class="form-label" for="configMidCaps">Mid Caps Tickers</label>
-          <textarea id="configMidCaps" class="form-textarea"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configSmallCaps">Small Caps Tickers</label>
-          <textarea id="configSmallCaps" class="form-textarea"></textarea>
+          <label class="form-label" for="configUniverse">Tickers list (comma-separated, no need to add '.NS')</label>
+          <textarea id="configUniverse" class="form-textarea" style="height: 120px;" placeholder="e.g. RELIANCE, TCS, TATAMOTORS, CDSL, TRENT, POLYCAB"></textarea>
         </div>
       </div>
       <div class="drawer-footer">
@@ -1233,6 +1233,17 @@
       });
     };
 
+    window.loadRecommendedUniverse = function() {
+      const recommended = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TATAMOTORS', 'TRENT', 'CDSL', 'BSE', 'POLYCAB', 'VOLTAS', 'KAYNES', 'CLEAN', 'BEL'];
+      document.getElementById('configUniverse').value = recommended.join(', ');
+      showToast('Loaded recommended tickers!', 'success');
+    };
+
+    window.clearUniverseInput = function() {
+      document.getElementById('configUniverse').value = '';
+      showToast('Cleared tickers input', 'info');
+    };
+
     // Load configs from API
     async function load() {
       try {
@@ -1249,9 +1260,17 @@
         document.getElementById('configTelegramChatId').value = cfg.telegram_chat_id || '';
         
         if (cfg.universe) {
-          document.getElementById('configLargeCaps').value = (cfg.universe.large || []).join(', ');
-          document.getElementById('configMidCaps').value = (cfg.universe.mid || []).join(', ');
-          document.getElementById('configSmallCaps').value = (cfg.universe.small || []).join(', ');
+          let flat = [];
+          if (Array.isArray(cfg.universe)) {
+            flat = cfg.universe;
+          } else {
+            flat = [
+              ...(cfg.universe.large || []),
+              ...(cfg.universe.mid || []),
+              ...(cfg.universe.small || [])
+            ];
+          }
+          document.getElementById('configUniverse').value = flat.map(s => s.replace(/\.NS$/i, '')).join(', ');
         }
       } catch (e) {
         console.error("Failed to load configuration", e);
@@ -1282,9 +1301,7 @@
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving...';
       
-      const largeTickers = document.getElementById('configLargeCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      const midTickers = document.getElementById('configMidCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      const smallTickers = document.getElementById('configSmallCaps').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      const tickers = document.getElementById('configUniverse').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
       
       const payload = {
         brand: document.getElementById('configBrand').value,
@@ -1294,11 +1311,7 @@
         shortlist_per_bucket: parseInt(document.getElementById('configShortlist').value, 10),
         telegram_bot_token: document.getElementById('configTelegramToken').value,
         telegram_chat_id: document.getElementById('configTelegramChatId').value,
-        universe: {
-          large: largeTickers,
-          mid: midTickers,
-          small: smallTickers
-        }
+        universe: tickers
       };
       
       try {

@@ -226,7 +226,10 @@ def run_cycle():
     try:
         log("Loading live data")
         universe = load_universe(UNIVERSE_PATH)
-        all_symbols = [x for bucket in universe.values() for x in bucket]
+        if isinstance(universe, dict):
+            all_symbols = [x for bucket in universe.values() for x in bucket]
+        else:
+            all_symbols = list(universe)
         set_agent("scout", "working")
         evidence = load_live_evidence(universe)
         shortlist = []
@@ -385,7 +388,7 @@ def save_config():
     if "universe" in data:
         try:
             univ_data = data["universe"]
-            if isinstance(univ_data, dict):
+            if isinstance(univ_data, (dict, list)):
                 UNIVERSE_PATH.write_text(json.dumps(univ_data, indent=2), encoding="utf-8")
         except Exception as e:
             return jsonify({"ok": False, "error": f"Failed to save universe.json: {str(e)}"}), 400

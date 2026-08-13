@@ -34,9 +34,24 @@ def build_evidence(symbol, cap, info, hist, news):
     import pandas as pd
     gaps=[]
     name=info.get("longName") or info.get("shortName") or symbol.replace(".NS","")
+    
+    # Dynamically classify cap segment based on marketCap in INR
+    mc = info.get("marketCap")
+    cap_segment = cap
+    if mc:
+        if mc >= 200000000000: # ₹20,000 Crores
+            cap_segment = "large"
+        elif mc >= 50000000000: # ₹5,000 Crores
+            cap_segment = "mid"
+        else:
+            cap_segment = "small"
+    else:
+        if cap_segment not in ("large", "mid", "small"):
+            cap_segment = "small"
+
     if hist is None or hist.empty:
         gaps += ["price.live","price.day_open","price.day_high","price.day_low","price.prev_close","price.day_change_pct","price.volume","technicals","range_52w"]
-        return {"symbol":symbol.replace(".NS",""),"name":name,"cap_segment":cap,"sector":info.get("sector"),"price":{"live":None,"day_open":None,"day_high":None,"day_low":None,"prev_close":None,"day_change_pct":None,"volume":None},"range_52w":{"high":None,"low":None,"pct_from_high":None,"position_pct":None},"technicals":{"rvol":None,"price_vs_sma_pct":None,"window_return_pct":None,"swing_high":None,"swing_low":None,"day_range_position_pct":None,"trend":"sideways"},"analyst":{},"news":{"total":0,"positive":0,"negative":0,"neutral":0,"recent":[]},"data_gaps":gaps}
+        return {"symbol":symbol.replace(".NS",""),"name":name,"cap_segment":cap_segment,"sector":info.get("sector"),"price":{"live":None,"day_open":None,"day_high":None,"day_low":None,"prev_close":None,"day_change_pct":None,"volume":None},"range_52w":{"high":None,"low":None,"pct_from_high":None,"position_pct":None},"technicals":{"rvol":None,"price_vs_sma_pct":None,"window_return_pct":None,"swing_high":None,"swing_low":None,"day_range_position_pct":None,"trend":"sideways"},"analyst":{},"news":{"total":0,"positive":0,"negative":0,"neutral":0,"recent":[]},"data_gaps":gaps}
     close=hist["Close"]; vol=hist["Volume"]
     latest=float(close.iloc[-1]); prev=float(close.iloc[-2]) if len(close)>1 else None
     high=float(hist["High"].iloc[-1]); low=float(hist["Low"].iloc[-1]); op=float(hist["Open"].iloc[-1]); volume=float(vol.iloc[-1])
@@ -65,7 +80,7 @@ def build_evidence(symbol, cap, info, hist, news):
         else: neut+=1
     for path,val in [("news.recent",recent), ("price.volume",volume)]:
         if val is None: gaps.append(path)
-    res_dict = {"symbol":symbol.replace(".NS",""),"name":name,"cap_segment":cap,"sector":info.get("sector"),
+    res_dict = {"symbol":symbol.replace(".NS",""),"name":name,"cap_segment":cap_segment,"sector":info.get("sector"),
       "price":{"live":round(latest,2),"day_open":round(op,2),"day_high":round(high,2),"day_low":round(low,2),"prev_close":round(prev,2) if prev is not None else None,"day_change_pct":_pct(latest,prev),"volume":int(volume)},
       "range_52w":{"high":hi52,"low":lo52,"pct_from_high":_pct(latest,hi52),"position_pct":round(pos,2) if pos is not None else None},
       "technicals":{"rvol":round(volume/avgvol,2) if avgvol else None,"price_vs_sma_pct":_pct(latest,sma20),"window_return_pct":_pct(latest,float(close.iloc[0])) if len(close) else None,"swing_high":round(float(hist["High"].tail(20).max()),2),"swing_low":round(float(hist["Low"].tail(20).min()),2),"day_range_position_pct":round(closepos,2) if closepos is not None else None,"trend":trend},
@@ -79,8 +94,20 @@ def load_live_evidence(universe):
     from concurrent.futures import ThreadPoolExecutor
     out = []
     
+    flat_tickers = []
+    if isinstance(universe, dict):
+        for cap, tickers in universe.items():
+            for sym in tickers:
+                flat_tickers.append((sym, cap))
+    elif isinstance(universe, list):
+        for sym in universe:
+            flat_tickers.append((sym, "unknown"))
+            
     def fetch_one(symbol, cap):
-        t = symbol if symbol.endswith(".NS") else symbol + ".NS"
+        sym_clean = symbol.strip().upper().replace(" ", "")
+        if not sym_clean:
+            return None
+        t = sym_clean if sym_clean.endswith(".NS") else sym_clean + ".NS"
         try:
             y = yf.Ticker(t)
             hist = y.history(period="1mo", interval="1d", auto_adjust=False)
@@ -91,7 +118,7 @@ def load_live_evidence(universe):
             return {
                 "symbol": t.replace(".NS", ""),
                 "name": t.replace(".NS", ""),
-                "cap_segment": cap,
+                "cap_segment": cap if cap != "unknown" else "small",
                 "sector": None,
                 "price": {"live": None, "day_open": None, "day_high": None, "day_low": None, "prev_close": None, "day_change_pct": None, "volume": None},
                 "range_52w": {"high": None, "low": None, "pct_from_high": None, "position_pct": None},
@@ -103,12 +130,13 @@ def load_live_evidence(universe):
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = []
-        for cap, tickers in universe.items():
-            for symbol in tickers:
-                futures.append(executor.submit(fetch_one, symbol, cap))
+        for sym, cap in flat_tickers:
+            futures.append(executor.submit(fetch_one, sym, cap))
         for f in futures:
             try:
-                out.append(f.result())
+                res = f.result()
+                if res:
+                    out.append(res)
             except Exception:
                 pass
     return out
