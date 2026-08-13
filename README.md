@@ -1,7 +1,9 @@
 # MarketPulse — Local Indian Stock Agent Dashboard
 
 A local Flask dashboard that runs a named multi-agent stock-analysis panel, stores an audit trail in SQLite, and can send qualified BUY signals to Telegram. **No orders are placed.**
-
+ 
+ live workng url:https://market-pulse-6bnv.vercel.app/
+ 
 ## 1. Install
 
 ```bash
