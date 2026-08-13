@@ -76,14 +76,39 @@ def build_evidence(symbol, cap, info, hist, news):
 
 def load_live_evidence(universe):
     import yfinance as yf
-    out=[]
-    for cap,tickers in universe.items():
-        for symbol in tickers:
-            t=symbol if symbol.endswith(".NS") else symbol+".NS"
+    from concurrent.futures import ThreadPoolExecutor
+    out = []
+    
+    def fetch_one(symbol, cap):
+        t = symbol if symbol.endswith(".NS") else symbol + ".NS"
+        try:
+            y = yf.Ticker(t)
+            hist = y.history(period="1mo", interval="1d", auto_adjust=False)
+            info = y.info or {}
+            news = y.news or []
+            return build_evidence(t, cap, info, hist, news)
+        except Exception:
+            return {
+                "symbol": t.replace(".NS", ""),
+                "name": t.replace(".NS", ""),
+                "cap_segment": cap,
+                "sector": None,
+                "price": {"live": None, "day_open": None, "day_high": None, "day_low": None, "prev_close": None, "day_change_pct": None, "volume": None},
+                "range_52w": {"high": None, "low": None, "pct_from_high": None, "position_pct": None},
+                "technicals": {"rvol": None, "price_vs_sma_pct": None, "window_return_pct": None, "swing_high": None, "swing_low": None, "day_range_position_pct": None, "trend": "sideways"},
+                "analyst": {"consensus": None, "num_analysts": None, "buy_pct": None, "hold_pct": None, "sell_pct": None, "target_mean": None, "target_low": None, "target_high": None, "upside_pct": None},
+                "news": {"total": 0, "positive": 0, "negative": 0, "neutral": 0, "recent": []},
+                "data_gaps": ["live data fetch failed"]
+            }
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = []
+        for cap, tickers in universe.items():
+            for symbol in tickers:
+                futures.append(executor.submit(fetch_one, symbol, cap))
+        for f in futures:
             try:
-                y=yf.Ticker(t); hist=y.history(period="1mo",interval="1d",auto_adjust=False)
-                info=y.info or {}; news=y.news or []
-                out.append(build_evidence(t,cap,info,hist,news))
+                out.append(f.result())
             except Exception:
-                out.append({"symbol":t.replace(".NS",""),"name":t.replace(".NS",""),"cap_segment":cap,"sector":None,"price":{"live":None,"day_open":None,"day_high":None,"day_low":None,"prev_close":None,"day_change_pct":None,"volume":None},"range_52w":{"high":None,"low":None,"pct_from_high":None,"position_pct":None},"technicals":{"rvol":None,"price_vs_sma_pct":None,"window_return_pct":None,"swing_high":None,"swing_low":None,"day_range_position_pct":None,"trend":"sideways"},"analyst":{"consensus":None,"num_analysts":None,"buy_pct":None,"hold_pct":None,"sell_pct":None,"target_mean":None,"target_low":None,"target_high":None,"upside_pct":None},"news":{"total":0,"positive":0,"negative":0,"neutral":0,"recent":[]},"data_gaps":["live data fetch failed"]})
+                pass
     return out

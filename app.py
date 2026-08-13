@@ -260,7 +260,8 @@ def run_cycle():
                     "scores": res.get("scores", {}),
                     "buy_zone": res["verdict"].get("buy_zone"),
                     "target": res["verdict"].get("target"),
-                    "stop_loss": res["verdict"].get("stop_loss")
+                    "stop_loss": res["verdict"].get("stop_loss"),
+                    "news": ev.get("news", {})
                 })
             conn.execute("INSERT INTO verdicts(run_id, created_at, symbol, verdict, confidence, winner, rationale, catalyst, price, day_change_pct, evidence_json, result_json, verifier_ok) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, now_ist(), ev["symbol"], res["verdict"]["verdict"], res["verdict"]["confidence"], res["verdict"]["winner"],
