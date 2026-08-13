@@ -10,23 +10,53 @@ from data_sources import load_demo_evidence, load_live_evidence, load_universe
 from llm import evaluate_with_engine, detect_engine
 
 BASE = Path(__file__).resolve().parent
-DB_PATH = BASE / "audit.sqlite3"
-ENV_PATH = BASE / ".env"
+
+# Writable paths for Vercel Serverless environment
+if os.getenv("VERCEL"):
+    DB_PATH = Path("/tmp") / "audit.sqlite3"
+    UNIVERSE_PATH = Path("/tmp") / "universe.json"
+    ENV_PATH = Path("/tmp") / ".env"
+    
+    # Initialize templates inside /tmp if not present
+    import shutil
+    if (BASE / "universe.json").exists() and not UNIVERSE_PATH.exists():
+        try:
+            shutil.copy(BASE / "universe.json", UNIVERSE_PATH)
+        except Exception:
+            pass
+    if (BASE / ".env").exists() and not ENV_PATH.exists():
+        try:
+            shutil.copy(BASE / ".env", ENV_PATH)
+        except Exception:
+            pass
+    elif not ENV_PATH.exists():
+        try:
+            ENV_PATH.write_text("", encoding="utf-8")
+        except Exception:
+            pass
+else:
+    DB_PATH = BASE / "audit.sqlite3"
+    UNIVERSE_PATH = BASE / "universe.json"
+    ENV_PATH = BASE / ".env"
 
 
 def load_env(path=ENV_PATH, force=False):
     if not path.exists():
         return
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key:
-            if force or key not in os.environ:
-                os.environ[key] = value
+    try:
+        content = path.read_text(encoding="utf-8")
+        for raw in content.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                if force or key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        pass
 
 load_env()
 
@@ -195,7 +225,7 @@ def run_cycle():
 
     try:
         log("Loading live data")
-        universe = load_universe(BASE / "universe.json")
+        universe = load_universe(UNIVERSE_PATH)
         all_symbols = [x for bucket in universe.values() for x in bucket]
         set_agent("scout", "working")
         evidence = load_live_evidence(universe)
@@ -333,7 +363,7 @@ def status():
 
 @app.get("/config")
 def config():
-    universe = load_universe(BASE / "universe.json")
+    universe = load_universe(UNIVERSE_PATH)
     return jsonify({
         "brand": os.getenv("BRAND", "MarketPulse"),
         "confidence_threshold": int(os.getenv("CONFIDENCE_THRESHOLD", "7")),
@@ -356,7 +386,7 @@ def save_config():
         try:
             univ_data = data["universe"]
             if isinstance(univ_data, dict):
-                (BASE / "universe.json").write_text(json.dumps(univ_data, indent=2), encoding="utf-8")
+                UNIVERSE_PATH.write_text(json.dumps(univ_data, indent=2), encoding="utf-8")
         except Exception as e:
             return jsonify({"ok": False, "error": f"Failed to save universe.json: {str(e)}"}), 400
             
