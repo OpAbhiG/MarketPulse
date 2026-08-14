@@ -226,26 +226,44 @@
       padding: 20px;
     }
     .modal-backdrop.open { display: flex; }
-    .modal {
-      background: #1e293b;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      width: 100%;
-      max-width: 1000px;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-      padding: 26px;
-      color: #f8fafc;
-    }
-  </style>
-
-
     .change.up { color: #10b981; font-weight: 700; }
     .change.down { color: #ef4444; font-weight: 700; }
+
+    /* Responsive Media Queries for Mobile & Tablet */
+    @media (max-width: 1024px) {
+      .decision-row {
+        grid-template-columns: 140px 150px 150px 1fr 120px;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-inner { flex-direction: column; gap: 12px; align-items: stretch; }
+      .header-actions { flex-wrap: wrap; justify-content: center; }
+      .counter-grid { grid-template-columns: repeat(2, 1fr); }
+      .decision-row {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 12px;
+        padding: 14px;
+      }
+      .decision-row > div:nth-child(4) {
+        grid-column: span 2;
+      }
+      .filter-bar { flex-direction: column; align-items: stretch; gap: 12px; }
+      .toggle-group { justify-content: center; flex-wrap: wrap; }
+      .modal { padding: 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .counter-grid { grid-template-columns: 1fr; }
+      .decision-row { grid-template-columns: 1fr; }
+      .decision-row > div:nth-child(4) { grid-column: span 1; }
+      .btn { width: 100%; justify-content: center; }
+    }
   </style>
 </head>
 <body>
+
 
   <header class="header">
     <div class="header-inner">
