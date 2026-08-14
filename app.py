@@ -10,7 +10,11 @@ import data_sources
 import scoring
 import database
 import performance_engine
+import paper_trading
+import feature_attribution
+import ablation
 from market_regime import evaluate_market_regime
+
 
 from sector_engine import fetch_sector_heatmaps
 from opportunity_engine import rank_market_opportunities
@@ -153,7 +157,20 @@ def get_agent_perf_stats():
     agent_perf = get_agent_performance_metrics()
     return jsonify({"ok": True, "agent_performance": agent_perf})
 
+@app.route("/api/paper-trading", methods=["GET"])
+def get_paper_trading_api():
+    return jsonify({"ok": True, "paper_summary": paper_trading.get_paper_trading_summary()})
+
+@app.route("/api/feature-attribution", methods=["GET"])
+def get_feature_attribution_api():
+    return jsonify({"ok": True, "attribution": feature_attribution.calculate_feature_attributions()})
+
+@app.route("/api/strategy-ablation", methods=["GET"])
+def get_strategy_ablation_api():
+    return jsonify({"ok": True, "ablation": ablation.run_strategy_ablation()})
+
 @app.route("/backtest", methods=["POST"])
+
 def trigger_backtest():
     data = request.get_json(silent=True) or {}
     strat_name = data.get("strategy_name", "Momentum Breakout")
@@ -228,6 +245,8 @@ def background_analysis_pipeline(custom_symbols=None):
         database.save_verdict(run_id, v)
         if v.get("decision_state") == "BUY NOW":
             performance_engine.record_opportunity_prediction(v, mode="SWING")
+            paper_trading.place_paper_trade(v, mode="SWING")
+
         if v.get("decision_state") == "BLOCKED":
             blocked_verdicts.append(v)
         elif v.get("decision_state") == "AVOID":

@@ -94,9 +94,20 @@ def get_performance_summary():
     wins = [r for r in records if r.get("ret_5d", 0) > 0]
     win_rate = round((len(wins) / len(records)) * 100, 1) if records else 65.0
 
+    # Rolling Strategy Decay Monitor
+    last_20 = records[:20]
+    wins_20 = [r for r in last_20 if r.get("ret_5d", 0) > 0]
+    win_rate_20 = round((len(wins_20) / max(1, len(last_20))) * 100, 1)
+
+    decay_status = "STABLE EDGE"
+    if len(records) >= 20 and (win_rate - win_rate_20) >= 12.0:
+        decay_status = "EDGE DETERIORATING"
+
     return {
         "total_signals_tracked": len(records),
         "win_rate": win_rate,
+        "win_rate_last_20": win_rate_20,
+        "strategy_decay_status": decay_status,
         "avg_return_5d": 4.2,
         "avg_mfe": 6.8,
         "avg_mae": -1.5,
@@ -106,6 +117,7 @@ def get_performance_summary():
         "target_2_hit_rate": 48.0,
         "stop_loss_hit_rate": 18.0
     }
+
 
 def _fallback_performance():
     return {
