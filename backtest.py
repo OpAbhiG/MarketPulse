@@ -70,7 +70,8 @@ def run_strategy_backtest(symbol_list=None, strategy_name="Momentum Breakout", r
                         "exit_reason": exit_reason,
                         "gross_return_pct": round(gross_ret, 2),
                         "return_pct": round(net_ret, 2),
-                        "win": net_ret > 0
+                        "win": bool(net_ret > 0)
+
                     })
         except Exception:
             pass

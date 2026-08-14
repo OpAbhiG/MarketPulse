@@ -20,7 +20,8 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
     dq = verdict_payload.get("data_quality_score", 100)
     boom_type = verdict_payload.get("boom_type", "NORMAL")
 
-    price = verdict_payload.get("price", 100.0)
+    price = float(verdict_payload.get("price") or 100.0)
+
     t = verdict_payload.get("technicals", {})
     rvol = t.get("rvol", 1.0)
     trend = t.get("trend", "sideways")
