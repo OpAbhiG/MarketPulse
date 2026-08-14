@@ -1,3 +1,5 @@
+import strategy_health
+
 def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
     """
     Evaluates evidence and verdict payload to determine strict 6-State Trading Decision:
@@ -8,7 +10,20 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
     - 🟠 BLOCKED: Setup attractive (Score >= 75) but risk/validation gate (e.g. portfolio concentration) prevents trading.
     - ⚪ NO TRADE: Default state when no candidate meets minimum criteria.
     """
+    health = strategy_health.evaluate_strategy_health()
+    if not health.get("is_active"):
+        return {
+            "decision_state": "BLOCKED",
+            "decision_badge": "🟠 BLOCKED",
+            "avoid_reasons": ["❌ BUY BLOCKED — Strategy Paused due to recent performance decay"],
+            "why_buy": [],
+            "why_not_buy": ["Strategy Kill-Switch active"],
+            "trigger_price_text": "BLOCKED",
+            "invalidation_text": "BLOCKED"
+        }
+
     master_score = verdict_payload.get("marketpulse_score", 50)
+
     verdict = verdict_payload.get("verdict", "WATCH")
     conf = verdict_payload.get("confidence", 5)
     validated = verdict_payload.get("validated", False)

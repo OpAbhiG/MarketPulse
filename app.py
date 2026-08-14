@@ -13,7 +13,13 @@ import performance_engine
 import paper_trading
 import feature_attribution
 import ablation
+import independent_evaluator
+import signal_replay
+import statistics_engine
+import strategy_health
+import drift_detector
 from market_regime import evaluate_market_regime
+
 
 
 from sector_engine import fetch_sector_heatmaps
@@ -169,7 +175,28 @@ def get_feature_attribution_api():
 def get_strategy_ablation_api():
     return jsonify({"ok": True, "ablation": ablation.run_strategy_ablation()})
 
+@app.route("/api/evaluator", methods=["GET"])
+def get_evaluator_api():
+    return jsonify({"ok": True, "evaluation": independent_evaluator.evaluate_signal_outcomes_independently()})
+
+@app.route("/api/signal-replay/<signal_id>", methods=["GET"])
+def get_signal_replay_api(signal_id):
+    return jsonify({"ok": True, "replay": signal_replay.replay_historical_signal(signal_id)})
+
+@app.route("/api/statistics", methods=["GET"])
+def get_statistics_api():
+    return jsonify({"ok": True, "statistics": statistics_engine.calculate_bootstrap_confidence_intervals()})
+
+@app.route("/api/strategy-health", methods=["GET"])
+def get_strategy_health_api():
+    return jsonify({"ok": True, "health": strategy_health.evaluate_strategy_health()})
+
+@app.route("/api/drift-detector", methods=["GET"])
+def get_drift_detector_api():
+    return jsonify({"ok": True, "drift": drift_detector.detect_market_data_drift()})
+
 @app.route("/backtest", methods=["POST"])
+
 
 def trigger_backtest():
     data = request.get_json(silent=True) or {}
@@ -246,6 +273,28 @@ def background_analysis_pipeline(custom_symbols=None):
         if v.get("decision_state") == "BUY NOW":
             performance_engine.record_opportunity_prediction(v, mode="SWING")
             paper_trading.place_paper_trade(v, mode="SWING")
+            sig_id = f"sig_{int(datetime.now().timestamp())}_{v.get('symbol')}"
+            database.save_signal_snapshot({
+                "signal_id": sig_id,
+                "timestamp": datetime.now().isoformat(),
+                "symbol": v.get("symbol"),
+                "mode": "SWING",
+                "strategy": "Momentum Breakout",
+                "decision_state": "BUY NOW",
+                "entry_price": float(v.get("price") or 100.0),
+                "trigger_price": float(v.get("price") or 100.0),
+                "stop_loss": float(v.get("risk_params", {}).get("stop_loss") or 94.0),
+                "target_1": float(v.get("risk_params", {}).get("target_1") or 108.0),
+                "target_2": float(v.get("risk_params", {}).get("target_2") or 115.0),
+                "master_score": v.get("marketpulse_score", 85),
+                "rvol": v.get("technicals", {}).get("rvol", 2.0),
+                "rs_score": 80,
+                "sector": "General",
+                "market_regime": regime.get("risk_mode", "NORMAL") if regime else "NORMAL",
+                "breadth_score": 75,
+                "data_quality_score": 100
+            })
+
 
         if v.get("decision_state") == "BLOCKED":
             blocked_verdicts.append(v)

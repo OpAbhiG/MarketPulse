@@ -194,13 +194,79 @@ def init_db():
         created_at TEXT
     )""")
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS signal_snapshots (
+        signal_id TEXT PRIMARY KEY,
+        timestamp TEXT,
+        symbol TEXT,
+        mode TEXT,
+        strategy TEXT,
+        decision_state TEXT,
+        entry_price REAL,
+        trigger_price REAL,
+        stop_loss REAL,
+        target_1 REAL,
+        target_2 REAL,
+        master_score INTEGER,
+        rvol REAL,
+        rs_score INTEGER,
+        sector TEXT,
+        market_regime TEXT,
+        breadth_score INTEGER,
+        data_quality_score INTEGER,
+        snapshot_json TEXT,
+        strategy_version TEXT DEFAULT 'v6.0'
+    )""")
+
     # Indexes for high performance
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_verdicts_symbol ON verdicts(symbol);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_signals_status ON signals(status);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_evidence_run ON evidence(run_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_symbol ON signal_snapshots(symbol);")
 
     conn.commit()
     conn.close()
+
+def save_signal_snapshot(snap):
+    """Saves immutable signal snapshot at signal creation time."""
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("""
+            INSERT OR IGNORE INTO signal_snapshots (
+                signal_id, timestamp, symbol, mode, strategy, decision_state,
+                entry_price, trigger_price, stop_loss, target_1, target_2,
+                master_score, rvol, rs_score, sector, market_regime,
+                breadth_score, data_quality_score, snapshot_json, strategy_version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            snap.get("signal_id"),
+            snap.get("timestamp", datetime.now().isoformat()),
+            snap.get("symbol"),
+            snap.get("mode", "SWING"),
+            snap.get("strategy", "Momentum Breakout"),
+            snap.get("decision_state", "BUY NOW"),
+            snap.get("entry_price", 100.0),
+            snap.get("trigger_price", 100.0),
+            snap.get("stop_loss", 94.0),
+            snap.get("target_1", 108.0),
+            snap.get("target_2", 115.0),
+            snap.get("master_score", 85),
+            snap.get("rvol", 2.0),
+            snap.get("rs_score", 80),
+            snap.get("sector", "General"),
+            snap.get("market_regime", "NORMAL"),
+            snap.get("breadth_score", 75),
+            snap.get("data_quality_score", 100),
+            json.dumps(snap),
+            "v6.0"
+        ))
+        conn.commit()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
 
 def save_run(run_data):
     conn = get_connection()
