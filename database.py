@@ -325,12 +325,20 @@ def get_watchlist():
     return [dict(r) for r in rows]
 
 def add_to_watchlist(symbol, notes=""):
+    if not symbol: return
+    # Extract symbol if user passes full NSE URL
+    if "nseindia.com" in symbol.lower():
+        match = re.search(r'equity/([A-Za-z0-9\-_]+)', symbol, re.IGNORECASE)
+        if match:
+            symbol = match.group(1)
+    clean_sym = symbol.upper().replace(".NS", "").strip()
     conn = get_connection()
     c = conn.cursor()
     c.execute("INSERT OR REPLACE INTO watchlist (symbol, added_at, notes) VALUES (?, ?, ?)",
-              (symbol.upper().replace(".NS",""), datetime.utcnow().isoformat(), notes))
+              (clean_sym, datetime.now().isoformat(), notes))
     conn.commit()
     conn.close()
+
 
 def remove_from_watchlist(symbol):
     conn = get_connection()

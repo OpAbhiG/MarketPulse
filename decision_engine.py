@@ -38,7 +38,8 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
     price = float(verdict_payload.get("price") or 100.0)
 
     t = verdict_payload.get("technicals", {})
-    rvol = t.get("rvol", 1.0)
+    rvol = float(t.get("rvol") or 1.0)
+
     trend = t.get("trend", "sideways")
     sw_hi = t.get("swing_high") or (price * 1.02)
     sw_lo = t.get("swing_low") or (price * 0.94)

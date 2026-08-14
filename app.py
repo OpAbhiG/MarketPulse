@@ -195,7 +195,44 @@ def get_strategy_health_api():
 def get_drift_detector_api():
     return jsonify({"ok": True, "drift": drift_detector.detect_market_data_drift()})
 
+@app.route("/api/parse-pasted-stocks", methods=["POST"])
+def parse_pasted_stocks_route():
+    data = request.get_json(silent=True) or {}
+    raw_text = data.get("text", "")
+    if not raw_text:
+        return jsonify({"ok": False, "symbols": []}), 400
+
+    extracted = []
+    # Match NSE URLs like https://www.nseindia.com/get-quote/equity/COALINDIA/Coal-India-Limited
+    url_matches = re.findall(r'nseindia\.com/get-quote/equity/([A-Za-z0-9\-_]+)', raw_text, re.IGNORECASE)
+    for m in url_matches:
+        extracted.append(m.upper().replace(".NS", ""))
+
+    # Match symbol= parameters
+    param_matches = re.findall(r'symbol=([A-Za-z0-9\-_]+)', raw_text, re.IGNORECASE)
+    for m in param_matches:
+        extracted.append(m.upper().replace(".NS", ""))
+
+    # Match raw ticker tokens (2 to 15 alphanumeric characters)
+    words = re.findall(r'\b[A-Za-z0-9\.\-]{2,15}\b', raw_text)
+    ignore_set = {"HTTPS", "HTTP", "WWW", "NSEINDIA", "COM", "GET-QUOTE", "EQUITY", "GET", "QUOTE", "HTML", "INDEX", "COAL-INDIA-LIMITED"}
+    for w in words:
+        clean_w = w.upper().replace(".NS", "").strip()
+        if clean_w not in ignore_set and (clean_w.isalpha() or clean_w.isalnum()):
+            extracted.append(clean_w)
+
+    # Deduplicate while preserving order
+    seen = set()
+    final_symbols = []
+    for s in extracted:
+        if s not in seen and len(s) >= 2:
+            seen.add(s)
+            final_symbols.append(s)
+
+    return jsonify({"ok": True, "symbols": final_symbols})
+
 @app.route("/backtest", methods=["POST"])
+
 
 
 def trigger_backtest():

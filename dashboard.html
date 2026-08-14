@@ -454,17 +454,30 @@
 
     function renderFeed() {
       const feedEl = document.getElementById('feed');
-      let filtered = localVerdicts;
+      let filtered = localVerdicts.slice();
+
+      // Mode Sorting & Highlighting
+      if (currentMode === 'INTRADAY') {
+        filtered.sort((a, b) => (b.intraday_score || 0) - (a.intraday_score || 0));
+      } else if (currentMode === 'SWING') {
+        filtered.sort((a, b) => (b.swing_score || 0) - (a.swing_score || 0));
+      }
+
+      // Flexible Category Filtering
       if (currentFilter !== 'ALL') {
-        filtered = filtered.filter(x => x.decision_state === currentFilter);
+        const cf = currentFilter.toUpperCase().replace(/^[^A-Z]+/, '').trim();
+        filtered = filtered.filter(x => {
+          const ds = (x.decision_state || '').toUpperCase().trim();
+          return ds === cf || ds.includes(cf) || cf.includes(ds);
+        });
       }
 
       if (filtered.length === 0) {
-        feedEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No stocks match filter "${currentFilter}".</div>`;
+        feedEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No stocks match category filter "${currentFilter}" under ${currentMode} mode.</div>`;
         return;
       }
 
-      feedEl.innerHTML = filtered.slice().reverse().map(v => `
+      feedEl.innerHTML = filtered.map(v => `
         <div class="decision-row" onclick="openDetailModal('${v.symbol}')" style="cursor:pointer;">
           <div>
             <span style="font-weight:800; font-size:16px;">${v.symbol}</span>
@@ -475,8 +488,8 @@
           </div>
           <div>
             <div style="font-weight:800; font-size:13px;">Master: ${v.marketpulse_score}/100</div>
-            <div style="font-size:10px; color:#2563eb; font-weight:700;">Intraday: ${v.intraday_score}/100</div>
-            <div style="font-size:10px; color:#7c3aed; font-weight:700;">Swing: ${v.swing_score}/100</div>
+            <div style="font-size:10px; color:${currentMode === 'INTRADAY' ? '#047857' : '#2563eb'}; font-weight:${currentMode === 'INTRADAY' ? '900' : '700'};">⚡ Intraday: ${v.intraday_score}/100</div>
+            <div style="font-size:10px; color:${currentMode === 'SWING' ? '#047857' : '#7c3aed'}; font-weight:${currentMode === 'SWING' ? '900' : '700'};">📈 Swing: ${v.swing_score}/100</div>
           </div>
           <div>
             <div style="font-size:11px; font-weight:700; color:#047857;">Why Buy: ${(v.why_buy || [])[0] || '—'}</div>
