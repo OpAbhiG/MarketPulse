@@ -69,6 +69,8 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
 
     trigger_price = f"₹{sw_hi:.2f}"
     invalidation_price = f"₹{sw_lo:.2f}"
+    trigger_val = float(sw_hi)
+    sl_val = float(sw_lo)
 
     # Decision State Machine
     if master_score >= 75 and (val_status == "BUY BLOCKED" or not validated) and ("Portfolio" in val_reason or "Risk" in val_reason):
@@ -80,9 +82,9 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
         decision_badge = "🟢 BUY NOW"
         action = "BUY ENTRY CONFIRMED"
     elif master_score >= 75 and (verdict in ("BUY", "WATCH") or boom_type != "NORMAL") and not is_ext:
-        decision_state = "BUY ON CONFIRMATION"
-        decision_badge = "🟡 BUY ON CONFIRMATION"
-        action = f"BUY ONLY ABOVE {trigger_price}"
+        decision_state = "WAIT — CONFIRMATION REQUIRED"
+        decision_badge = "🟡 WAIT — CONFIRMATION REQUIRED"
+        action = f"WAIT FOR CONFIRMATION ABOVE {trigger_price}"
     elif master_score >= 65 and not is_ext:
         decision_state = "WATCH"
         decision_badge = "🔵 WATCH"
@@ -92,16 +94,59 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
         decision_badge = "🔴 AVOID"
         action = "WAIT / DO NOT BUY"
 
+    # Deterministic "WHAT WOULD CHANGE THIS TO BUY?"
+    what_changes = []
+    if price < trigger_val:
+        what_changes.append(f"✓ Price breaks & closes above {trigger_price}")
+    if rvol < 1.5:
+        what_changes.append("✓ RVOL expands to >= 1.5x average volume")
+    if is_ext:
+        what_changes.append("✓ Price consolidates to reset extension status")
+    if rr < 1.5:
+        what_changes.append("✓ Risk/Reward ratio improves to >= 1:1.5")
+    if not what_changes:
+        what_changes.append("✓ Market regime remains supportive & validation passes")
+
+    # What Confirms & What Invalidates
+    what_confirms = [
+        f"✓ Breakout above resistance ({trigger_price})",
+        f"✓ Heavy buying volume (RVOL >= 1.5x, currently {rvol:.2f}x)",
+        "✓ Supportive sector momentum & market regime"
+    ]
+    what_invalidates = [
+        f"✗ Daily close below invalidation ({invalidation_price})",
+        "✗ Sudden volume spike on down candle",
+        "✗ Market regime shift to HIGH RISK / BEARISH"
+    ]
+
+    # Detailed Trade Plan
+    rp = verdict_payload.get("risk_params", {})
+    trade_plan = {
+        "decision_state": decision_state,
+        "entry_price": f"₹{price:.2f}",
+        "trigger_price": trigger_price,
+        "stop_loss": f"₹{sl_val:.2f}",
+        "target_1": rp.get("target_1_str", f"₹{(price*1.08):.2f}"),
+        "target_2": rp.get("target_2_str", f"₹{(price*1.15):.2f}"),
+        "rr_ratio": f"1:{rr:.1f}",
+        "position_size": f"{rp.get('suggested_position_size_pct', 10.0)}% of capital",
+        "max_loss": f"₹{rp.get('max_loss_per_trade_inr', 1000.0)}"
+    }
 
     return {
         "decision_state": decision_state,
         "decision_badge": decision_badge,
         "action": action,
         "trigger_price": trigger_price,
+        "trigger_price_val": trigger_val,
         "invalidation_price": invalidation_price,
         "why_buy": why_buy[:4] if why_buy else ["✓ Evaluated against quantitative indicators"],
         "why_not_buy": why_not_buy[:4] if why_not_buy else ["⚠ Waiting for candle close confirmation"],
-        "avoid_reasons": avoid_reasons[:4] if avoid_reasons else ["❌ Master Score below required threshold"]
+        "avoid_reasons": avoid_reasons[:4] if avoid_reasons else ["❌ Master Score below required threshold"],
+        "what_would_change_to_buy": what_changes,
+        "what_confirms_it": what_confirms,
+        "what_invalidates_it": what_invalidates,
+        "trade_plan": trade_plan
     }
 
 def summarize_decisions(verdicts):
@@ -118,16 +163,20 @@ def summarize_decisions(verdicts):
     for v in verdicts:
         ds = v.get("decision_state", "AVOID")
         if ds == "BUY NOW": counts["buy_now"] += 1
-        elif ds == "BUY ON CONFIRMATION": counts["confirmation"] += 1
+        elif "WAIT" in ds or ds == "BUY ON CONFIRMATION": counts["confirmation"] += 1
         elif ds == "WATCH": counts["watch"] += 1
         elif ds == "AVOID": counts["avoid"] += 1
         elif ds == "BLOCKED": counts["blocked"] += 1
 
     if counts["buy_now"] > 0:
         counts["summary"] = f"{counts['buy_now']} High-Conviction BUY NOW setup(s) active"
+        counts["top_label"] = "TOP PICK"
     elif counts["confirmation"] > 0:
         counts["summary"] = f"{counts['confirmation']} Setup(s) waiting for confirmation"
+        counts["top_label"] = "TOP OPPORTUNITY TO WATCH"
     else:
         counts["summary"] = "NO HIGH-CONVICTION BUY TODAY"
+        counts["top_label"] = "TOP OPPORTUNITY TO WATCH"
 
     return counts
+

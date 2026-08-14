@@ -19,7 +19,9 @@ import signal_replay
 import statistics_engine
 import strategy_health
 import drift_detector
+import chart_validator
 from market_regime import evaluate_market_regime
+
 
 
 
@@ -201,7 +203,18 @@ def get_strategy_health_api():
 def get_drift_detector_api():
     return jsonify({"ok": True, "drift": drift_detector.detect_market_data_drift()})
 
+@app.route("/api/chart-validation", methods=["POST"])
+def validate_chart_api():
+    data = request.get_json(silent=True) or {}
+    mp_sym = data.get("symbol")
+    tv_sym = data.get("tradingview_symbol")
+    mp_price = data.get("price")
+    chart_price = data.get("chart_price")
+    res = chart_validator.validate_chart_data_match(mp_sym, tv_sym, mp_price, chart_price)
+    return jsonify({"ok": True, "validation": res})
+
 @app.route("/api/eod-summary", methods=["GET"])
+
 def get_eod_summary_api():
     return jsonify({"ok": True, "eod_summary": paper_trading.get_eod_daily_summary()})
 

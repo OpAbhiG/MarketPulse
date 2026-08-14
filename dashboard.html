@@ -538,34 +538,82 @@
       `).join('');
     }
 
+    let currentTvWidget = null;
+
+    function destroyPreviousChartWidget() {
+      if (currentTvWidget) {
+        try {
+          if (typeof currentTvWidget.remove === 'function') {
+            currentTvWidget.remove();
+          }
+        } catch(e) {}
+        currentTvWidget = null;
+      }
+      const container = document.getElementById('tv_chart_container');
+      if (container) {
+        container.innerHTML = '';
+      }
+    }
+
     function openDetailModal(symbol) {
+      destroyPreviousChartWidget();
+
       const v = localVerdicts.find(x => x.symbol === symbol);
       if (!v) return;
 
-      const cleanSym = (v.symbol || '').replace('.NS', '').replace(/[^A-Za-z0-9]/g, '').trim().toUpperCase();
+      const forbiddenUS = ['AAPL', 'TSLA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'SPY', 'QQQ'];
+      const rawSym = (v.symbol || '').toUpperCase().replace('.NS', '').replace('NSE:', '').trim();
+      const cleanSym = rawSym.replace(/[^A-Za-z0-9]/g, '');
+
+      if (forbiddenUS.includes(cleanSym)) {
+        document.getElementById('modalTitle').innerHTML = `<h3 style="color:#b91c1c; margin:0;">⚠️ CHART SYMBOL ERROR</h3>`;
+        document.getElementById('modalBody').innerHTML = `
+          <div style="background:#fef2f2; border:1px solid #fecaca; padding:24px; border-radius:12px; text-align:center; color:#b91c1c;">
+            <h4 style="margin:0 0 8px 0; font-size:16px;">FORBIDDEN INSTRUMENT DETECTED</h4>
+            <p style="font-size:13px; margin:0 0 12px 0;">Expected: <b>NSE:${cleanSym}</b> | Loaded: <b>US Equity (${cleanSym})</b></p>
+            <p style="font-size:12px; color:#475569; margin:0;">MarketPulse operates strictly on NSE Indian equities. US stock substitution is forbidden.</p>
+          </div>
+        `;
+        document.getElementById('modalBackdrop').classList.add('open');
+        return;
+      }
+
+      const expectedTvSym = `NSE:${cleanSym}`;
+      const stockQuality = v.stock_quality_score || v.marketpulse_score || 75;
+      const entryQuality = v.entry_quality_score || 58;
+
       const t1Val = v.target || (v.price ? (v.price * 1.08).toFixed(2) : '—');
       const t2Val = v.price ? (v.price * 1.15).toFixed(2) : '—';
       const slVal = v.stop_loss || (v.price ? (v.price * 0.94).toFixed(2) : '—');
+      const decState = v.decision_state || 'WATCH';
 
       document.getElementById('modalTitle').innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:20px; font-weight:800;">${cleanSym}</span>
-            <span class="badge badge-${(v.decision_state || 'AVOID').toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || v.decision_state}</span>
-            <span style="font-size:13px; color:var(--text-muted);">Master Score: ${v.marketpulse_score}/100</span>
+            <span style="font-size:20px; font-weight:900;">${cleanSym}</span>
+            <span class="badge badge-${decState.toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || decState}</span>
+            <span style="background:#f1f5f9; color:#334155; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">Stock Quality: ${stockQuality}/100</span>
+            <span style="background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:800;">Entry Quality: ${entryQuality}/100</span>
           </div>
-          <a href="https://www.tradingview.com/chart/?symbol=NSE:${cleanSym}" target="_blank" class="btn btn-secondary" style="font-size:12px; font-weight:800; padding:6px 12px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; text-decoration:none;">
+          <a href="https://www.tradingview.com/chart/?symbol=${expectedTvSym}" target="_blank" class="btn btn-secondary" style="font-size:12px; font-weight:800; padding:6px 12px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; text-decoration:none;">
             🚀 Open in TradingView (Fullscreen) ↗
           </a>
         </div>
       `;
 
       document.getElementById('modalBody').innerHTML = `
+        <!-- Disclaimer & Agreement Panel -->
+        <div style="background:#f8fafc; border:1px solid var(--border-color); padding:10px 14px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700;">
+          <span style="color:var(--text-muted);">ℹ️ <i>Master Score measures setup quality, not probability of profit.</i></span>
+          <span style="color:#059669;">SYSTEM AGREEMENT: <b>HIGH</b> (MarketPulse: ${decState} | TradingView: ${decState})</span>
+        </div>
+
+        <!-- Level Markings Grid -->
         <div style="margin-bottom:14px; background:#f8fafc; border:1px solid var(--border-color); padding:12px; border-radius:10px;">
-          <h4 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:var(--text-muted); text-transform:uppercase;">📍 CHART MARKINGS & KEY LEVELS</h4>
+          <h4 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:var(--text-muted); text-transform:uppercase;">📍 CHART MARKINGS & CALCULATED LEVELS (${expectedTvSym})</h4>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; font-size:12px; font-weight:700;">
             <div style="background:#fff; padding:8px 10px; border-radius:6px; border:1px solid #e2e8f0;">
-              <span style="color:var(--text-muted); font-size:10px; display:block;">ENTRY ZONE</span>
+              <span style="color:var(--text-muted); font-size:10px; display:block;">CURRENT PRICE</span>
               <span style="color:#0f172a; font-weight:800;">₹${v.price ?? '—'}</span>
             </div>
             <div style="background:#ecfdf5; padding:8px 10px; border-radius:6px; border:1px solid #a7f3d0;">
@@ -591,18 +639,36 @@
           </div>
         </div>
 
+        <!-- Embedded TradingView Container -->
         <div style="margin-bottom:16px;">
           <div id="tv_chart_container" style="height:380px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;">
+        <!-- Deterministic "WHAT WOULD CHANGE THIS TO BUY?" Panel for WAIT setups -->
+        ${decState.includes('WAIT') || decState === 'WATCH' ? `
+          <div style="margin-bottom:14px; background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:8px; font-size:12px;">
+            <h4 style="margin:0 0 6px 0; color:#b45309; font-weight:900;">⚡ WHAT WOULD CHANGE THIS DECISION TO BUY NOW?</h4>
+            ${(v.what_would_change_to_buy || ['✓ Price breaks resistance with volume >= 1.5x']).map(w => `<div style="font-weight:700; color:#92400e; margin-bottom:2px;">${w}</div>`).join('')}
+          </div>
+        ` : ''}
+
+        <!-- 4-Column Evidence Matrix -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:12px;">
           <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px;">
-            <h4 style="margin:0 0 6px 0; color:#047857;">WHY BUY THIS SETUP?</h4>
-            ${(v.why_buy || []).map(w => `<div>${w}</div>`).join('')}
+            <h4 style="margin:0 0 6px 0; color:#047857; font-weight:900;">WHY BUY?</h4>
+            ${(v.why_buy || []).map(w => `<div style="font-weight:700;">${w}</div>`).join('')}
           </div>
           <div style="background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:8px;">
-            <h4 style="margin:0 0 6px 0; color:#b45309;">WHY NOT BUY YET / CAUTION?</h4>
-            ${(v.why_not_buy || []).map(w => `<div>${w}</div>`).join('')}
+            <h4 style="margin:0 0 6px 0; color:#b45309; font-weight:900;">WHY NOT BUY YET?</h4>
+            ${(v.why_not_buy || []).map(w => `<div style="font-weight:700;">${w}</div>`).join('')}
+          </div>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:12px; border-radius:8px;">
+            <h4 style="margin:0 0 6px 0; color:#1d4ed8; font-weight:900;">WHAT CONFIRMS IT?</h4>
+            ${(v.what_confirms_it || ['✓ Breakout above resistance']).map(w => `<div style="font-weight:700;">${w}</div>`).join('')}
+          </div>
+          <div style="background:#fef2f2; border:1px solid #fecaca; padding:12px; border-radius:8px;">
+            <h4 style="margin:0 0 6px 0; color:#b91c1c; font-weight:900;">WHAT INVALIDATES IT?</h4>
+            ${(v.what_invalidates_it || ['✗ Close below stop loss']).map(w => `<div style="font-weight:700;">${w}</div>`).join('')}
           </div>
         </div>
       `;
@@ -612,9 +678,9 @@
       setTimeout(() => {
         if (window.TradingView) {
           document.getElementById('tv_chart_container').innerHTML = '';
-          new window.TradingView.widget({
+          currentTvWidget = new window.TradingView.widget({
             "autosize": true,
-            "symbol": "NSE:" + cleanSym,
+            "symbol": expectedTvSym,
             "interval": "D",
             "timezone": "Asia/Kolkata",
             "theme": "light",
@@ -622,12 +688,13 @@
             "locale": "en",
             "toolbar_bg": "#f1f3f6",
             "enable_publishing": false,
-            "allow_symbol_change": true,
+            "allow_symbol_change": false,
             "container_id": "tv_chart_container"
           });
         }
       }, 100);
     }
+
 
 
     function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }

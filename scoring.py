@@ -152,6 +152,20 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "risk_params": risk_params
     }
 
+    # Stock Quality (Setup Quality) vs Entry Quality (Trigger & Volume Readiness)
+    rvol_val = float(t.get("rvol") or 1.0)
+    stock_quality = master_score
+    entry_quality = int(
+        (30.0 if rvol_val >= 1.5 else (rvol_val / 1.5) * 30.0) +
+        (25.0 if not ext_res.get("is_too_extended") else 10.0) +
+        (25.0 if risk_params.get("rr_ratio", 1.0) >= 1.5 else 10.0) +
+        (20.0 if verdict_payload.get("boom_type") != "NORMAL" else 10.0)
+    )
+    entry_quality = max(10, min(100, entry_quality))
+
+    verdict_payload["stock_quality_score"] = stock_quality
+    verdict_payload["entry_quality_score"] = entry_quality
+
     # 6. Signal Validation Gate
     validation = validate_signal(verdict_payload, evidence, market_regime, config)
     if risk_params["portfolio_concentration"]["is_blocked"]:
@@ -170,4 +184,9 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     dec_res = evaluate_trading_decision(evidence, verdict_payload, market_regime)
     verdict_payload.update(dec_res)
 
+    # 8. Analysis Snapshot Creation
+    from chart_validator import create_analysis_snapshot
+    verdict_payload["analysis_snapshot"] = create_analysis_snapshot(verdict_payload, evidence)
+
     return verdict_payload
+
