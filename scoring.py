@@ -50,6 +50,7 @@ def deterministic_evaluate(e):
     catalyst=(br[1] if winner=="Bull" and len(br)>1 else br[0] if br else "data unavailable")
     
     latest = p.get("live")
+    day_chg = p.get("day_change_pct")
     buy_zone = None
     target = None
     stop_loss = None
@@ -65,6 +66,17 @@ def deterministic_evaluate(e):
             target = f"₹{t_mean:.2f}"
         else:
             target = f"₹{latest * 1.15:.2f} (15% Target)"
+
+    # Identify matching NSE strategies
+    strategies = []
+    if verdict == "BUY" and conf >= 8:
+        strategies.append("Strong Buy")
+    if rvol is not None and rvol >= 1.4 and (day_chg is None or day_chg >= 1.0) and (close is None or close >= 65):
+        strategies.append("BOOM Momentum")
+    if pos is not None and pos >= 88:
+        strategies.append("52W High Breakout")
+    if pos is not None and pos <= 40 and upside is not None and upside >= 12 and (rvol is None or rvol >= 1.1):
+        strategies.append("Value Reversal")
             
     scores={
       "bull":{"score":bull,"reasons":br[:4]}, "bear":{"score":bear,"reasons":rr[:4]},
@@ -72,4 +84,5 @@ def deterministic_evaluate(e):
       "technician":{"score":round(clamp(50+(sma or 0)*1.2+(rvol or 1)*5),1),"reasons":br[:2] if sma is not None else ["data unavailable"]},
       "newsdesk":{"score":round(clamp(50+((posnews-neg)*8)),1),"reasons":["positive news" if posnews>neg else "negative news" if neg>posnews else "mixed news"]},
     }
-    return {"scores":scores,"verdict":{"winner":winner,"verdict":verdict,"confidence":conf,"rationale":rationale,"key_catalyst":catalyst,"bull_score":bull,"bear_score":bear,"net":net,"buy_zone":buy_zone,"target":target,"stop_loss":stop_loss},"verifier_ok":True}
+    return {"scores":scores,"verdict":{"winner":winner,"verdict":verdict,"confidence":conf,"rationale":rationale,"key_catalyst":catalyst,"bull_score":bull,"bear_score":bear,"net":net,"buy_zone":buy_zone,"target":target,"stop_loss":stop_loss,"strategies":strategies},"verifier_ok":True}
+

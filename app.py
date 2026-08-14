@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 import requests
 from flask import Flask, jsonify, request, send_file
 
-from data_sources import load_demo_evidence, load_live_evidence, load_universe
+from data_sources import load_demo_evidence, load_live_evidence, load_universe, extract_nse_symbols
 from llm import evaluate_with_engine, detect_engine
 
 BASE = Path(__file__).resolve().parent
@@ -171,6 +171,7 @@ def signal_text(v):
     
     # Extract trade guide levels
     verdict_data = v.get("verdict", {})
+    strategies_str = ", ".join(verdict_data.get("strategies", []))
     guide_text = ""
     if verdict_data.get("buy_zone") or verdict_data.get("target") or verdict_data.get("stop_loss"):
         guide_text = (f"🎯 <b>Trade Setup Guide</b>:\n"
@@ -178,14 +179,20 @@ def signal_text(v):
                       f"• Target Price: {verdict_data.get('target', 'data unavailable')}\n"
                       f"• Stop Loss: {verdict_data.get('stop_loss', 'data unavailable')}\n\n")
                       
-    return (f"🟢 BUY SIGNAL — {symbol} ({cap} cap)\n"
+    strats_header = f" | Strategy: {strategies_str}" if strategies_str else ""
+    nse_url = f"https://www.nseindia.com/get-quotes/equity?symbol={symbol}"
+    tv_url = f"https://in.tradingview.com/chart/?symbol=NSE:{symbol}"
+
+    return (f"🟢 BUY SIGNAL — <b>{symbol}</b> ({cap} cap{strats_header})\n"
             f"Verdict: BUY | Confidence: {verdict_data.get('confidence', 0)}/10\n"
             f"Winner: {verdict_data.get('winner', 'Bull')}\n\n"
             f"{guide_text}"
             f"Why: {verdict_data.get('rationale', 'data unavailable')}\n"
             f"Key catalyst: {verdict_data.get('key_catalyst', 'data unavailable')}\n"
-            f"Live price: ₹{price if price is not None else 'data unavailable'} | Day change: {chg if chg is not None else 'data unavailable'}%\n"
+            f"Live price: ₹{price if price is not None else 'data unavailable'} | Day change: {chg if chg is not None else 'data unavailable'}%\n\n"
+            f"🔗 Links: <a href='{nse_url}'>NSE Official Quote</a> | <a href='{tv_url}'>TradingView Chart</a>\n"
             "— Analysis only. No trade was placed. Not investment advice.")
+
 
 
 def summary_text(fired, mode, engine):
@@ -294,8 +301,10 @@ def run_cycle():
                     "buy_zone": res["verdict"].get("buy_zone"),
                     "target": res["verdict"].get("target"),
                     "stop_loss": res["verdict"].get("stop_loss"),
+                    "strategies": res["verdict"].get("strategies", []),
                     "news": ev.get("news", {})
                 })
+
             conn.execute("INSERT INTO verdicts(run_id, created_at, symbol, verdict, confidence, winner, rationale, catalyst, price, day_change_pct, evidence_json, result_json, verifier_ok) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, now_ist(), ev["symbol"], res["verdict"]["verdict"], res["verdict"]["confidence"], res["verdict"]["winner"],
                  res["verdict"]["rationale"], res["verdict"]["key_catalyst"], ev["price"]["live"], ev["price"]["day_change_pct"],
@@ -419,7 +428,15 @@ def save_config():
         
     return jsonify({"ok": True})
 
+@app.post("/api/parse-pasted-stocks")
+def parse_pasted_stocks():
+    data = request.get_json(silent=True) or {}
+    raw_text = data.get("text", "")
+    symbols = extract_nse_symbols(raw_text)
+    return jsonify({"ok": True, "symbols": symbols, "count": len(symbols)})
+
 if __name__ == "__main__":
+
     port = int(os.getenv("PORT", "5000"))
     print(f"Local dashboard: http://127.0.0.1:{port}")
     app.run(host="127.0.0.1", port=port, debug=False, threaded=True)

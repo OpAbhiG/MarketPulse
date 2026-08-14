@@ -971,6 +971,10 @@
         MarketPulse <span>· Indian stock analysis · <b id="agentCount">8</b> agents on duty</span>
       </div>
       <div class="controls">
+        <button id="openPasteBtn" class="btn btn-secondary" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          📋 Paste NSE stocks
+        </button>
         <button id="openConfigBtn" class="btn btn-secondary">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           Configure universe
@@ -1032,7 +1036,7 @@
       
       <!-- Interactive filters bar -->
       <div class="filter-bar">
-        <input type="text" id="searchBar" class="search-input" placeholder="Search symbol or name...">
+        <input type="text" id="searchBar" class="search-input" placeholder="Search symbol, name, or strategy...">
         <div class="filter-group">
           <select id="capFilter" class="select" style="height:40px; font-size:12px;">
             <option value="all">All Caps</option>
@@ -1043,11 +1047,14 @@
           <div class="filter-tabs">
             <button class="filter-tab active" data-verdict="all">All</button>
             <button class="filter-tab" data-verdict="buy">BUY</button>
-            <button class="filter-tab" data-verdict="watch">WATCH</button>
+            <button class="filter-tab" data-verdict="strong">🚀 Strong Buy</button>
+            <button class="filter-tab" data-verdict="boom">🔥 BOOM</button>
+            <button class="filter-tab" data-verdict="breakout">📈 52W High</button>
             <button class="filter-tab" data-verdict="avoid">AVOID</button>
           </div>
         </div>
       </div>
+
 
       <div class="feed-card" id="feed">
         <div class="empty">Press “Start agents” to run the panel.</div>
@@ -1135,6 +1142,49 @@
       </div>
     </div>
   </div>
+
+  <!-- Interactive Paste & Analyze NSE Stocks Drawer -->
+  <div class="drawer-backdrop" id="pasteBackdrop">
+    <div class="drawer" id="pasteDrawer">
+      <div class="drawer-header">
+        <h3 style="margin:0; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
+          📋 Paste & Analyze NSE Stocks
+        </h3>
+        <button class="modal-close" id="closePasteDrawerBtn">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div style="background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:#1e40af; line-height:1.45;">
+          <b>💡 How to copy-paste from NSE website:</b><br>
+          Paste any raw text, table data, or watchlist URLs copied directly from <b>NSE India</b>. Our parser automatically extracts clean NSE tickers.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pasteInputText">Paste Copied NSE Text, URLs, or Tickers</label>
+          <textarea id="pasteInputText" class="form-textarea" style="height: 160px; font-family: var(--font-mono); font-size: 12px;" placeholder="Paste text copied from NSE website tables, search, or watchlist...&#10;e.g. RELIANCE, TCS, https://www.nseindia.com/get-quotes/equity?symbol=TATAMOTORS, INFY.NS, SBIN"></textarea>
+        </div>
+
+        <div id="parsedPreviewSection" style="margin-top:12px; display:none;">
+          <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; display:flex; justify-content:space-between;">
+            <span>Recognized Tickers</span>
+            <span id="parsedCountBadge" style="color:var(--color-working); font-weight:800;">0 stocks found</span>
+          </div>
+          <div id="parsedBadgesContainer" style="display:flex; flex-wrap:wrap; gap:6px; max-height:100px; overflow-y:auto; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:8px;"></div>
+        </div>
+      </div>
+      <div class="drawer-footer" style="flex-direction:column; gap:8px;">
+        <button class="btn" style="width:100%; justify-content:center;" id="runPastedBtn">
+          🚀 Run Agent Analysis on Pasted Stocks
+        </button>
+        <div style="display:flex; gap:8px; width:100%;">
+          <button class="btn btn-secondary" style="flex:1; justify-content:center;" id="savePastedUniverseBtn">Save to Universe</button>
+          <button class="btn btn-secondary" style="flex:1; justify-content:center;" id="cancelPasteBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Interactive Debate Breakdown Modal -->
   <div class="backdrop" id="modalBackdrop">
@@ -1233,7 +1283,98 @@
       });
     };
 
+    // Quick copy helper functions
+    window.copySymbol = function(sym) {
+      navigator.clipboard.writeText(sym).then(() => showToast(`Copied symbol '${sym}'!`, 'success')).catch(() => showToast('Failed to copy', 'error'));
+    };
+
+    window.copyNseLink = function(sym) {
+      const url = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(sym)}`;
+      navigator.clipboard.writeText(url).then(() => showToast(`Copied NSE link for '${sym}'!`, 'success')).catch(() => showToast('Failed to copy', 'error'));
+    };
+
+    // Paste NSE stocks drawer logic
+    let parsedPastedSymbols = [];
+
+    function openPasteDrawer() {
+      document.getElementById('pasteBackdrop').classList.add('open');
+      document.getElementById('pasteDrawer').classList.add('open');
+    }
+
+    function closePasteDrawer() {
+      document.getElementById('pasteBackdrop').classList.remove('open');
+      document.getElementById('pasteDrawer').classList.remove('open');
+    }
+
+    document.getElementById('openPasteBtn').onclick = openPasteDrawer;
+    document.getElementById('closePasteDrawerBtn').onclick = closePasteDrawer;
+    document.getElementById('cancelPasteBtn').onclick = closePasteDrawer;
+    document.getElementById('pasteBackdrop').onclick = (e) => {
+      if (e.target.id === 'pasteBackdrop') closePasteDrawer();
+    };
+
+    document.getElementById('pasteInputText').oninput = async (e) => {
+      const text = e.target.value;
+      if (!text.trim()) {
+        document.getElementById('parsedPreviewSection').style.display = 'none';
+        parsedPastedSymbols = [];
+        return;
+      }
+      try {
+        const res = await fetch('/api/parse-pasted-stocks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        }).then(r => r.json());
+        if (res.ok && res.symbols) {
+          parsedPastedSymbols = res.symbols;
+          document.getElementById('parsedCountBadge').textContent = `${res.count} stock(s) recognized`;
+          document.getElementById('parsedBadgesContainer').innerHTML = res.symbols.map(s => `<span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px;">${escapeHtml(s)}</span>`).join('');
+          document.getElementById('parsedPreviewSection').style.display = 'block';
+        }
+      } catch (err) {
+        console.error("Failed to parse pasted text", err);
+      }
+    };
+
+    document.getElementById('savePastedUniverseBtn').onclick = async () => {
+      if (!parsedPastedSymbols.length) {
+        showToast('Please paste valid NSE stocks first!', 'error');
+        return;
+      }
+      document.getElementById('configUniverse').value = parsedPastedSymbols.join(', ');
+      showToast(`Updated universe with ${parsedPastedSymbols.length} stocks!`, 'success');
+      closePasteDrawer();
+      openDrawer();
+    };
+
+    document.getElementById('runPastedBtn').onclick = async () => {
+      if (!parsedPastedSymbols.length) {
+        showToast('Please paste valid NSE stocks first!', 'error');
+        return;
+      }
+      const runBtn = document.getElementById('runPastedBtn');
+      runBtn.disabled = true;
+      runBtn.textContent = 'Updating Universe & Triggering Agents...';
+      try {
+        await fetch('/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ universe: parsedPastedSymbols })
+        });
+        await fetch('/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+        showToast(`Started agents on ${parsedPastedSymbols.length} pasted stocks!`, 'success');
+        closePasteDrawer();
+      } catch (err) {
+        showToast('Failed to trigger run on pasted stocks', 'error');
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = '🚀 Run Agent Analysis on Pasted Stocks';
+      }
+    };
+
     window.loadRecommendedUniverse = function() {
+
       const recommended = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TATAMOTORS', 'TRENT', 'CDSL', 'BSE', 'POLYCAB', 'VOLTAS', 'KAYNES', 'CLEAN', 'BEL'];
       document.getElementById('configUniverse').value = recommended.join(', ');
       showToast('Loaded recommended tickers!', 'success');
@@ -1341,7 +1482,17 @@
       const v = localVerdicts.find(x => x.symbol === symbol);
       if (!v) return;
 
-      document.getElementById('modalTitle').innerHTML = `${escapeHtml(v.symbol)} <span style="font-size:13px; font-weight:normal; color:var(--text-secondary);">(${escapeHtml(v.name)})</span> <span class="badge ${v.verdict.toLowerCase()}">${escapeHtml(v.verdict)}</span>`;
+      document.getElementById('modalTitle').innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span>${escapeHtml(v.symbol)}</span>
+          <span style="font-size:13px; font-weight:normal; color:var(--text-secondary);">(${escapeHtml(v.name)})</span>
+          <a href="https://www.nseindia.com/get-quotes/equity?symbol=${escapeHtml(v.symbol)}" target="_blank" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" onclick="event.stopPropagation();">🏛️ NSE Quote</a>
+          <a href="https://www.tradingview.com/chart/?symbol=NSE:${escapeHtml(v.symbol)}" target="_blank" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:3px;" onclick="event.stopPropagation();">📈 Chart</a>
+          <button onclick="event.stopPropagation(); window.copySymbol('${escapeHtml(v.symbol)}')" style="border:none; background:#f1f5f9; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-secondary);">📋 Copy Symbol</button>
+          <span class="badge ${v.verdict.toLowerCase()}" style="margin-left:auto;">${escapeHtml(v.verdict)}</span>
+        </div>
+      `;
+
       
       let agentsHtml = '';
       const order = [
@@ -1483,11 +1634,20 @@
         const name = row.getAttribute('data-name').toLowerCase();
         const verdict = row.getAttribute('data-verdict').toLowerCase();
         const cap = row.getAttribute('data-cap').toLowerCase();
+        const strats = (row.getAttribute('data-strategies') || '').toLowerCase();
+        const conf = parseInt(row.getAttribute('data-confidence') || '0', 10);
         
-        const matchesSearch = !searchVal || symbol.includes(searchVal) || name.includes(searchVal);
-        const matchesVerdict = activeFilters.verdict === 'all' || verdict === activeFilters.verdict;
+        const matchesSearch = !searchVal || symbol.includes(searchVal) || name.includes(searchVal) || strats.includes(searchVal);
         const matchesCap = activeFilters.cap === 'all' || cap === activeFilters.cap;
-        
+
+        let matchesVerdict = false;
+        if (activeFilters.verdict === 'all') matchesVerdict = true;
+        else if (activeFilters.verdict === 'buy') matchesVerdict = verdict === 'buy';
+        else if (activeFilters.verdict === 'strong') matchesVerdict = verdict === 'buy' && (conf >= 8 || strats.includes('strong buy'));
+        else if (activeFilters.verdict === 'boom') matchesVerdict = strats.includes('boom momentum');
+        else if (activeFilters.verdict === 'breakout') matchesVerdict = strats.includes('52w high breakout');
+        else if (activeFilters.verdict === 'avoid') matchesVerdict = verdict === 'avoid';
+
         if (matchesSearch && matchesVerdict && matchesCap) {
           row.style.display = 'grid';
           visibleCount++;
@@ -1503,7 +1663,7 @@
           const div = document.createElement('div');
           div.id = 'empty-feed-placeholder';
           div.className = 'empty';
-          div.textContent = 'No verdicts match your filter criteria.';
+          div.textContent = 'No verdicts match your active strategy and search filter criteria.';
           document.getElementById('feed').appendChild(div);
         }
       } else if (emptyFeedEl) {
@@ -1618,14 +1778,33 @@
       // Verdicts list
       localVerdicts = s.verdicts || [];
       document.getElementById('feed').innerHTML = localVerdicts.length ? 
-        localVerdicts.slice().reverse().map(v => `
-          <div class="row verdict-row" data-symbol="${escapeHtml(v.symbol)}" data-name="${escapeHtml(v.name)}" data-verdict="${escapeHtml(v.verdict)}" data-cap="${escapeHtml(v.cap_segment)}" onclick="openDebateModal('${escapeHtml(v.symbol)}')" style="cursor:pointer;">
+        localVerdicts.slice().reverse().map(v => {
+          const stratsList = v.strategies || [];
+          const stratsAttr = escapeHtml(stratsList.join(','));
+          return `
+          <div class="row verdict-row" data-symbol="${escapeHtml(v.symbol)}" data-name="${escapeHtml(v.name)}" data-verdict="${escapeHtml(v.verdict)}" data-confidence="${v.confidence}" data-strategies="${stratsAttr}" data-cap="${escapeHtml(v.cap_segment)}" onclick="openDebateModal('${escapeHtml(v.symbol)}')" style="cursor:pointer;">
             <div>
-              <div class="sym">${escapeHtml(v.symbol)}</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span class="sym">${escapeHtml(v.symbol)}</span>
+                <button onclick="event.stopPropagation(); window.copySymbol('${escapeHtml(v.symbol)}')" title="Copy Stock Symbol" style="border:none; background:#f1f5f9; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:700; cursor:pointer; color:var(--text-secondary);">Copy</button>
+                <a href="https://www.nseindia.com/get-quotes/equity?symbol=${escapeHtml(v.symbol)}" target="_blank" title="Official NSE India Quote" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:2px;" onclick="event.stopPropagation();">
+                  🏛️ NSE
+                </a>
+                <a href="https://www.tradingview.com/chart/?symbol=NSE:${escapeHtml(v.symbol)}" target="_blank" title="TradingView Live Chart" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:2px;" onclick="event.stopPropagation();">
+                  📈 Chart
+                </a>
+              </div>
               <div class="cap">${escapeHtml(v.cap_segment)} cap</div>
             </div>
             <div>
               <span class="badge ${v.verdict.toLowerCase()}">${escapeHtml(v.verdict)}</span>
+              ${stratsList.map(st => {
+                let badgeStyle = "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;";
+                if (st.includes('BOOM')) badgeStyle = "background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;";
+                else if (st.includes('Strong')) badgeStyle = "background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;";
+                else if (st.includes('52W')) badgeStyle = "background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;";
+                return `<div class="badge" style="${badgeStyle} font-size:9px; margin-top:4px;">${escapeHtml(st)}</div>`;
+              }).join('')}
             </div>
             <div>
               <b>${v.confidence}/10</b>
@@ -1653,10 +1832,12 @@
               </div>
             </div>
           </div>
-        `).join('') : 
+        `;
+        }).join('') : 
         `<div class="empty">${s.running ? 'Waiting for evidence…' : 'No verdicts yet.'}</div>`;
       
       applyFilters();
+
 
       // Status info
       document.getElementById('runMeta').textContent = s.running ? 

@@ -15,6 +15,48 @@ def load_demo_evidence(folder):
     return out
 
 
+def extract_nse_symbols(text):
+    import re
+    if not text or not isinstance(text, str):
+        return []
+    
+    # 1. Look for explicit URL parameter symbol=SYMBOL
+    url_matches = re.findall(r'symbol=([A-Za-z0-9&\-_]+)', text)
+    
+    # 2. Split text by common separators (newlines, commas, tabs, spaces, semicolons, quotes, brackets)
+    raw_tokens = re.split(r'[\n\r\t,;:"\'()\[\]\s]+', text)
+    
+    candidates = list(url_matches) + raw_tokens
+    seen = set()
+    cleaned = []
+    
+    # Blacklist non-symbol noise words commonly found in NSE page copy/paste
+    blacklist = {
+        "NSE", "BSE", "SYMBOL", "PRICE", "CHANGE", "VOLUME", "HIGH", "LOW", "OPEN", "CLOSE",
+        "PREV", "TURNOVER", "MARKET", "CAP", "EQUITY", "DERIVATIVES", "INDEX", "NIFTY",
+        "BANKNIFTY", "COMPANY", "LTP", "PCHG", "CHG", "BUY", "SELL", "QTY", "VAL", "VALUE",
+        "HTTP", "HTTPS", "WWW", "NSEINDIA", "COM", "GET", "QUOTES"
+    }
+
+    for item in candidates:
+        if not item:
+            continue
+        # Strip trailing .NS or .BO
+        sym = item.strip().upper()
+        if sym.endswith(".NS") or sym.endswith(".BO"):
+            sym = sym[:-3]
+        
+        # Clean non-alphanumeric except hyphen & ampersand
+        sym = re.sub(r'[^A-Z0-9&\-]', '', sym)
+        
+        if len(sym) >= 2 and len(sym) <= 25 and sym not in blacklist and not sym.isdigit():
+            if sym not in seen:
+                seen.add(sym)
+                cleaned.append(sym)
+                
+    return cleaned
+
+
 def _pct(a,b): return round((a/b-1)*100,2) if a is not None and b else None
 
 def sanitize_nan(val):
