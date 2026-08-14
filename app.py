@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import uuid
 import json
@@ -215,7 +216,8 @@ def parse_pasted_stocks_route():
 
     # Match raw ticker tokens (2 to 15 alphanumeric characters)
     words = re.findall(r'\b[A-Za-z0-9\.\-]{2,15}\b', raw_text)
-    ignore_set = {"HTTPS", "HTTP", "WWW", "NSEINDIA", "COM", "GET-QUOTE", "EQUITY", "GET", "QUOTE", "HTML", "INDEX", "COAL-INDIA-LIMITED"}
+    ignore_set = {"HTTPS", "HTTP", "WWW", "NSEINDIA", "COM", "GET-QUOTE", "EQUITY", "GET", "QUOTE", "HTML", "INDEX", "LIMITED", "COAL-INDIA-LIMITED"}
+
     for w in words:
         clean_w = w.upper().replace(".NS", "").strip()
         if clean_w not in ignore_set and (clean_w.isalpha() or clean_w.isalnum()):
