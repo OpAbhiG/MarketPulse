@@ -507,18 +507,59 @@
       const v = localVerdicts.find(x => x.symbol === symbol);
       if (!v) return;
 
+      const cleanSym = (v.symbol || '').replace('.NS', '').replace(/[^A-Za-z0-9]/g, '').trim().toUpperCase();
+      const t1Val = v.target || (v.price ? (v.price * 1.08).toFixed(2) : '—');
+      const t2Val = v.price ? (v.price * 1.15).toFixed(2) : '—';
+      const slVal = v.stop_loss || (v.price ? (v.price * 0.94).toFixed(2) : '—');
+
       document.getElementById('modalTitle').innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:20px; font-weight:800;">${v.symbol}</span>
-          <span class="badge badge-${(v.decision_state || 'AVOID').toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || v.decision_state}</span>
-          <span style="font-size:13px; color:var(--text-muted);">Master Score: ${v.marketpulse_score}/100</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:20px; font-weight:800;">${cleanSym}</span>
+            <span class="badge badge-${(v.decision_state || 'AVOID').toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || v.decision_state}</span>
+            <span style="font-size:13px; color:var(--text-muted);">Master Score: ${v.marketpulse_score}/100</span>
+          </div>
+          <a href="https://www.tradingview.com/chart/?symbol=NSE:${cleanSym}" target="_blank" class="btn btn-secondary" style="font-size:12px; font-weight:800; padding:6px 12px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; text-decoration:none;">
+            🚀 Open in TradingView (Fullscreen) ↗
+          </a>
         </div>
       `;
 
       document.getElementById('modalBody').innerHTML = `
-        <div style="margin-bottom:16px;">
-          <div id="tv_chart_container" style="height:350px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
+        <div style="margin-bottom:14px; background:#f8fafc; border:1px solid var(--border-color); padding:12px; border-radius:10px;">
+          <h4 style="margin:0 0 8px 0; font-size:11px; font-weight:900; color:var(--text-muted); text-transform:uppercase;">📍 CHART MARKINGS & KEY LEVELS</h4>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; font-size:12px; font-weight:700;">
+            <div style="background:#fff; padding:8px 10px; border-radius:6px; border:1px solid #e2e8f0;">
+              <span style="color:var(--text-muted); font-size:10px; display:block;">ENTRY ZONE</span>
+              <span style="color:#0f172a; font-weight:800;">₹${v.price ?? '—'}</span>
+            </div>
+            <div style="background:#ecfdf5; padding:8px 10px; border-radius:6px; border:1px solid #a7f3d0;">
+              <span style="color:#047857; font-size:10px; display:block;">TARGET 1 (+8%)</span>
+              <span style="color:#047857; font-weight:800;">₹${t1Val}</span>
+            </div>
+            <div style="background:#ecfdf5; padding:8px 10px; border-radius:6px; border:1px solid #a7f3d0;">
+              <span style="color:#047857; font-size:10px; display:block;">TARGET 2 (+15%)</span>
+              <span style="color:#047857; font-weight:800;">₹${t2Val}</span>
+            </div>
+            <div style="background:#fef2f2; padding:8px 10px; border-radius:6px; border:1px solid #fecaca;">
+              <span style="color:#b91c1c; font-size:10px; display:block;">STOP LOSS (-6%)</span>
+              <span style="color:#b91c1c; font-weight:800;">₹${slVal}</span>
+            </div>
+            <div style="background:#eff6ff; padding:8px 10px; border-radius:6px; border:1px solid #bfdbfe;">
+              <span style="color:#1d4ed8; font-size:10px; display:block;">BUY TRIGGER</span>
+              <span style="color:#1d4ed8; font-weight:800;">Above ₹${v.trigger_price || v.price || '—'}</span>
+            </div>
+            <div style="background:#fff7ed; padding:8px 10px; border-radius:6px; border:1px solid #fed7aa;">
+              <span style="color:#c2410c; font-size:10px; display:block;">INVALIDATION</span>
+              <span style="color:#c2410c; font-weight:800;">Below ₹${v.invalidation_price || slVal}</span>
+            </div>
+          </div>
         </div>
+
+        <div style="margin-bottom:16px;">
+          <div id="tv_chart_container" style="height:380px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
+        </div>
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;">
           <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px;">
             <h4 style="margin:0 0 6px 0; color:#047857;">WHY BUY THIS SETUP?</h4>
@@ -529,9 +570,6 @@
             ${(v.why_not_buy || []).map(w => `<div>${w}</div>`).join('')}
           </div>
         </div>
-        <div style="margin-top:14px; background:#f8fafc; border:1px solid var(--border-color); padding:12px; border-radius:8px; font-size:12px; font-weight:700;">
-          Trigger: BUY ONLY ABOVE ${v.trigger_price || '—'} | Invalidation: Below ${v.invalidation_price || '—'} | Target 1: ${v.target || '—'} | Stop Loss: ${v.stop_loss || '—'}
-        </div>
       `;
 
       document.getElementById('modalBackdrop').classList.add('open');
@@ -541,15 +579,21 @@
           document.getElementById('tv_chart_container').innerHTML = '';
           new window.TradingView.widget({
             "autosize": true,
-            "symbol": "NSE:" + v.symbol,
+            "symbol": "NSE:" + cleanSym,
             "interval": "D",
             "timezone": "Asia/Kolkata",
             "theme": "light",
+            "style": "1",
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true,
             "container_id": "tv_chart_container"
           });
         }
-      }, 50);
+      }, 100);
     }
+
 
     function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }
     function openWatchlistDrawer() { loadWatchlist(); document.getElementById('watchlistBackdrop').classList.add('open'); }
