@@ -442,5 +442,8 @@ def parse_pasted_stocks():
 if __name__ == "__main__":
 
     port = int(os.getenv("PORT", "5000"))
-    print(f"Local dashboard: http://127.0.0.1:{port}")
-    app.run(host="127.0.0.1", port=port, debug=False, threaded=True)
+    print(f"MarketPulse Dashboard live at:")
+    print(f" • Localhost: http://localhost:{port}")
+    print(f" • IP Access: http://127.0.0.1:{port}")
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+
