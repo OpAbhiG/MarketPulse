@@ -2,16 +2,38 @@ import sqlite3
 import json
 import os
 import time
+import tempfile
 from datetime import datetime
 
-DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-DB_PATH = os.path.join(DB_DIR, "marketpulse.db")
+def get_db_path():
+    if os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None:
+        tmp_dir = tempfile.gettempdir()
+        return os.path.join(tmp_dir, "marketpulse.db")
+    
+    local_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    try:
+        os.makedirs(local_dir, exist_ok=True)
+        test_file = os.path.join(local_dir, ".writable_test")
+        with open(test_file, "w") as f:
+            f.write("1")
+        os.remove(test_file)
+        return os.path.join(local_dir, "marketpulse.db")
+    except Exception:
+        tmp_dir = tempfile.gettempdir()
+        os.makedirs(tmp_dir, exist_ok=True)
+        return os.path.join(tmp_dir, "marketpulse.db")
 
 def get_connection():
-    os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, timeout=20.0)
+    db_path = get_db_path()
+    try:
+        conn = sqlite3.connect(db_path, timeout=20.0)
+    except sqlite3.OperationalError:
+        fallback_path = os.path.join(tempfile.gettempdir(), "marketpulse.db")
+        conn = sqlite3.connect(fallback_path, timeout=20.0)
     conn.row_factory = sqlite3.Row
     return conn
+
+
 
 def init_db():
     conn = get_connection()
@@ -340,10 +362,14 @@ def add_to_watchlist(symbol, notes=""):
     conn.close()
 
 
-LAST_STATE_PATH = os.path.join(DB_DIR, "last_run_state.json")
+def get_last_state_path():
+    db_path = get_db_path()
+    db_dir = os.path.dirname(db_path)
+    return os.path.join(db_dir, "last_run_state.json")
 
 def save_last_run_state(run_state_dict):
     try:
+        path = get_last_state_path()
         data = {
             "verdicts": run_state_dict.get("verdicts", []),
             "blocked_verdicts": run_state_dict.get("blocked_verdicts", []),
@@ -355,18 +381,19 @@ def save_last_run_state(run_state_dict):
             "kpis": run_state_dict.get("kpis", {}),
             "completed_at": run_state_dict.get("completed_at")
         }
-        with open(LAST_STATE_PATH, "w") as f:
+        with open(path, "w") as f:
             json.dump(data, f)
     except Exception as e:
         print(f"Error saving last run state: {e}")
 
 def load_last_run_state():
-    if os.path.exists(LAST_STATE_PATH):
+    path = get_last_state_path()
+    if os.path.exists(path):
         try:
-            with open(LAST_STATE_PATH, "r") as f:
+            with open(path, "r") as f:
                 return json.load(f)
-        except Exception as e:
-            print(f"Error loading last run state: {e}")
+        except Exception:
+            return None
     return None
 
 def remove_from_watchlist(symbol):
