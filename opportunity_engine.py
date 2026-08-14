@@ -1,9 +1,25 @@
+from calibration_engine import get_calibrated_win_probability
+
+def calculate_expected_value(v, fee_pct=0.15, slippage_pct=0.10):
+    """
+    Calculates Expected Value (EV) for a candidate:
+    EV = [P(win) * avg_win] - [P(loss) * avg_loss] - fees - slippage
+    """
+    score = v.get("marketpulse_score", 50)
+    p_win = get_calibrated_win_probability(score)
+    p_loss = 1.0 - p_win
+
+    rr = v.get("rr_ratio", 1.5)
+    avg_win = rr * 4.0  # Assumed 4% base risk unit
+    avg_loss = 4.0
+
+    ev = (p_win * avg_win) - (p_loss * avg_loss) - (fee_pct * 2) - slippage_pct
+    return round(ev, 2)
+
 def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
     """
-    Ranks candidates across Intraday and Swing categories.
-    Enforces No-Forced-Signal Policy & No Contradictory UI State:
-    - top_pick is ONLY set if candidate decision_state == 'BUY NOW'.
-    - If buy_now candidates = 0, top_pick is None and summary is 'NO HIGH-CONVICTION BUY TODAY'.
+    Ranks candidates across Intraday and Swing categories based on Expected Value (EV).
+    Enforces No-Forced-Signal Policy & EV Optimization.
     """
     if not verdicts_list:
         return {
@@ -20,28 +36,31 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
             "opportunities_summary": "NO HIGH-CONVICTION BUY TODAY"
         }
 
-    # Count decisions
+    # Attach EV to every candidate
+    for v in verdicts_list:
+        v["expected_value"] = calculate_expected_value(v)
+        v["opportunity_quality_score"] = round((v.get("marketpulse_score", 50) * 0.6) + (max(0, v["expected_value"]) * 8.0), 1)
+
     buy_now_list = [v for v in verdicts_list if v.get("decision_state") == "BUY NOW"]
     confirmation_list = [v for v in verdicts_list if v.get("decision_state") == "BUY ON CONFIRMATION"]
     watch_list = [v for v in verdicts_list if v.get("decision_state") == "WATCH"]
     avoid_list = [v for v in verdicts_list if v.get("decision_state") == "AVOID"]
     blocked_list = [v for v in verdicts_list if v.get("decision_state") == "BLOCKED"]
 
-    # Filter Intraday candidates
+    # Filter & Sort Intraday candidates by EV
     intraday_candidates = [
         v for v in verdicts_list 
         if (v.get("intraday_score", 0) >= min_conviction_threshold) and not v.get("is_too_extended")
     ]
-    intraday_candidates.sort(key=lambda x: x.get("intraday_score", 0), reverse=True)
+    intraday_candidates.sort(key=lambda x: (x.get("expected_value", 0), x.get("intraday_score", 0)), reverse=True)
 
-    # Filter Swing candidates
+    # Filter & Sort Swing candidates by EV
     swing_candidates = [
         v for v in verdicts_list 
         if (v.get("swing_score", 0) >= min_conviction_threshold) and not v.get("is_too_extended")
     ]
-    swing_candidates.sort(key=lambda x: x.get("swing_score", 0), reverse=True)
+    swing_candidates.sort(key=lambda x: (x.get("expected_value", 0), x.get("swing_score", 0)), reverse=True)
 
-    # Only assign top pick if buy_now exists
     top_intraday = intraday_candidates[0] if (intraday_candidates and intraday_candidates[0].get("decision_state") == "BUY NOW") else None
     top_swing = swing_candidates[0] if (swing_candidates and swing_candidates[0].get("decision_state") == "BUY NOW") else None
 

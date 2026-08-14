@@ -9,7 +9,9 @@ from flask import Flask, jsonify, request, send_from_directory
 import data_sources
 import scoring
 import database
+import performance_engine
 from market_regime import evaluate_market_regime
+
 from sector_engine import fetch_sector_heatmaps
 from opportunity_engine import rank_market_opportunities
 from decision_engine import summarize_decisions
@@ -224,10 +226,13 @@ def background_analysis_pipeline(custom_symbols=None):
         v = scoring.deterministic_evaluate(ev, market_regime=regime, active_positions=verdicts)
         verdicts.append(v)
         database.save_verdict(run_id, v)
+        if v.get("decision_state") == "BUY NOW":
+            performance_engine.record_opportunity_prediction(v, mode="SWING")
         if v.get("decision_state") == "BLOCKED":
             blocked_verdicts.append(v)
         elif v.get("decision_state") == "AVOID":
             avoid_verdicts.append(v)
+
 
     opps = rank_market_opportunities(verdicts)
     dec_counts = summarize_decisions(verdicts)

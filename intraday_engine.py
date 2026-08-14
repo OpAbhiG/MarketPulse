@@ -1,4 +1,21 @@
 import math
+from datetime import datetime
+
+def calculate_time_of_day_rvol(raw_rvol):
+    """
+    Scales RVOL based on elapsed trading minutes in the NSE session (9:15 to 15:30 IST = 375 mins).
+    Prevents morning volume distortion.
+    """
+    now = datetime.now()
+    market_start_mins = 9 * 60 + 15  # 9:15 AM
+    curr_mins = now.hour * 60 + now.minute
+    
+    elapsed = max(15, min(375, curr_mins - market_start_mins)) if (curr_mins >= market_start_mins) else 375
+    time_factor = round(elapsed / 375.0, 2)
+
+    # Time-adjusted expected volume scaling
+    tod_rvol = round(raw_rvol / max(0.2, time_factor), 2) if time_factor < 1.0 else raw_rvol
+    return max(0.5, tod_rvol)
 
 def calculate_intraday_score(evidence, market_regime=None, sector_data=None):
     """
@@ -10,12 +27,13 @@ def calculate_intraday_score(evidence, market_regime=None, sector_data=None):
 
     latest = price.get("live") or 100.0
     day_chg = price.get("day_change_pct") or 0.0
-    rvol = tech.get("rvol") or 1.0
+    raw_rvol = tech.get("rvol") or 1.0
+    tod_rvol = calculate_time_of_day_rvol(raw_rvol)
+
     close_pos = tech.get("day_range_position_pct") or 50.0
     trend = tech.get("trend") or "sideways"
     sma_dist = tech.get("price_vs_sma_pct") or 0.0
 
-    # Intraday Indicators Proxy
     vwap = tech.get("vwap") or (latest * 0.995)
     ema9 = tech.get("ema9") or (latest * 0.998)
     ema20 = tech.get("ema20") or (latest * 0.992)
@@ -31,12 +49,12 @@ def calculate_intraday_score(evidence, market_regime=None, sector_data=None):
     elif day_chg >= 0.3: p_score = 8
     elif day_chg >= 0.0: p_score = 4
 
-    # 2. Relative Volume RVOL (Max 20)
+    # 2. Time-of-Day Adjusted RVOL (Max 20)
     v_score = 0
-    if rvol >= 2.5: v_score = 20
-    elif rvol >= 1.8: v_score = 16
-    elif rvol >= 1.2: v_score = 12
-    elif rvol >= 0.9: v_score = 8
+    if tod_rvol >= 2.5: v_score = 20
+    elif tod_rvol >= 1.8: v_score = 16
+    elif tod_rvol >= 1.2: v_score = 12
+    elif tod_rvol >= 0.9: v_score = 8
     else: v_score = 4
 
     # 3. VWAP & Short Trend Alignment (Max 15)
@@ -83,9 +101,9 @@ def calculate_intraday_score(evidence, market_regime=None, sector_data=None):
     total_score = max(0, min(100, total_score))
 
     # Intraday Classification
-    if total_score >= 85 and rvol >= 1.5 and latest >= vwap:
+    if total_score >= 85 and tod_rvol >= 1.5 and latest >= vwap:
         classification = "CONFIRMED INTRADAY"
-    elif total_score >= 75 and rvol >= 1.2:
+    elif total_score >= 75 and tod_rvol >= 1.2:
         classification = "BREAKOUT WATCH"
     elif total_score >= 65:
         classification = "MOMENTUM SETUP"
@@ -101,7 +119,9 @@ def calculate_intraday_score(evidence, market_regime=None, sector_data=None):
         "ema9": round(ema9, 2),
         "ema20": round(ema20, 2),
         "rsi": round(rsi, 1),
-        "rvol": round(rvol, 2),
+        "rvol": round(tod_rvol, 2),
+        "raw_rvol": round(raw_rvol, 2),
+        "tod_rvol": round(tod_rvol, 2),
         "vol_accel": round(vol_accel, 2),
         "breakdown": {
             "momentum": p_score,
