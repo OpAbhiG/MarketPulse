@@ -1,27 +1,25 @@
 import math
 
-def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trade=1000):
+def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trade=1000, active_positions=None):
     """
     Calculates Entry Zone, Stop Loss, Target 1, Target 2, Risk/Share, Reward/Share, R:R ratio,
-    and Position Size Calculator outputs.
+    Position Size Calculator outputs, and Portfolio Concentration Risk checks.
     """
     price = evidence.get("price", {})
     tech = evidence.get("technicals", {})
     analyst = evidence.get("analyst", {})
+    sector_name = evidence.get("sector") or "Banking"
 
     latest = price.get("live")
     if not latest:
         return _default_risk()
 
     sw_low = tech.get("swing_low")
-    sw_hi = tech.get("swing_high")
     target_mean = analyst.get("target_mean")
 
-    # Entry Zone: Current price up to 1.5% buffer
     entry_low = round(latest, 2)
     entry_high = round(latest * 1.015, 2)
 
-    # Stop Loss: Swing low if valid (within 4% - 12% below latest), else 8% SL
     sl_val = latest * 0.92
     if sw_low and sw_low < latest and sw_low >= latest * 0.85:
         sl_val = sw_low
@@ -31,10 +29,7 @@ def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trad
     if risk_per_share <= 0:
         risk_per_share = round(latest * 0.05, 2)
 
-    # Target 1: R:R = 1.5 (Risk * 1.5)
     t1_val = round(latest + (risk_per_share * 1.5), 2)
-
-    # Target 2: R:R = 3.0 or Analyst Target Mean if higher
     t2_val = round(latest + (risk_per_share * 3.0), 2)
     if target_mean and target_mean > t2_val:
         t2_val = round(target_mean, 2)
@@ -45,7 +40,6 @@ def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trad
     rr_t1 = round(reward_per_share_t1 / risk_per_share, 2) if risk_per_share > 0 else 1.5
     rr_t2 = round(reward_per_share_t2 / risk_per_share, 2) if risk_per_share > 0 else 3.0
 
-    # ATR 14 estimation if not present in technicals
     atr14 = tech.get("atr14") or round(latest * 0.025, 2)
 
     # Position Size Calculator
@@ -57,6 +51,24 @@ def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trad
     max_loss = round(qty * risk_per_share, 2)
     risk_pct = round((max_loss / trading_capital) * 100, 2) if trading_capital else 0.0
     pos_size_pct = round((capital_required / trading_capital) * 100, 2) if trading_capital else 0.0
+
+    # Portfolio Concentration Risk Check
+    positions = active_positions or []
+    max_open = 5
+    max_sector = 2
+
+    sector_count = sum(1 for p in positions if p.get("sector") == sector_name)
+    total_open = len(positions)
+
+    concentration_blocked = False
+    concentration_reason = "Portfolio risk within limits"
+
+    if total_open >= max_open:
+        concentration_blocked = True
+        concentration_reason = f"Portfolio limit reached ({total_open}/{max_open} active positions)"
+    elif sector_count >= max_sector:
+        concentration_blocked = True
+        concentration_reason = f"Portfolio concentration risk ({sector_count}/{max_sector} active {sector_name} positions)"
 
     return {
         "entry_price": latest,
@@ -73,6 +85,12 @@ def calculate_risk_parameters(evidence, trading_capital=50000, max_risk_per_trad
         "rr_ratio": rr_t1,
         "rr_ratio_t2": rr_t2,
         "atr14": atr14,
+        "portfolio_concentration": {
+            "is_blocked": concentration_blocked,
+            "reason": concentration_reason,
+            "sector_count": sector_count,
+            "total_open": total_open
+        },
         "calculator": {
             "quantity": qty,
             "capital_required": capital_required,
@@ -98,6 +116,7 @@ def _default_risk():
         "rr_ratio": 1.5,
         "rr_ratio_t2": 3.0,
         "atr14": 2.5,
+        "portfolio_concentration": {"is_blocked": False, "reason": "Portfolio risk within limits", "sector_count": 0, "total_open": 0},
         "calculator": {
             "quantity": 125,
             "capital_required": 12500.0,

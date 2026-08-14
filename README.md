@@ -1,44 +1,48 @@
-# MarketPulse — Autonomous NSE Stock Momentum & AI Signal Intelligence Platform
+# MarketPulse V2 — Autonomous NSE Indian Stock Momentum Discovery, AI Debate, Risk Analysis, Backtesting, & Telegram Alert Platform
 
-MarketPulse is a production-quality local **NSE Indian Stock Momentum Discovery, AI Debate, Risk Analysis, Backtesting, and Telegram Alert platform**.
-
-It runs entirely locally on your Windows machine without broker order execution, cloud backends, or automated trading.
+MarketPulse is a **LOCAL**, Python + Flask based NSE Indian Stock Intraday & Swing Momentum Discovery, Signal Validation, Risk Management, Backtesting, and Research Platform.
 
 ---
 
-## 🚀 Key Features
+## 🌟 Core Features
 
-1. **Market Regime Engine (`market_regime.py`)**: Analyzes NIFTY 50, NIFTY Bank, VIX, EMAs, and broad market breadth to classify Risk Mode (`RISK_ON`, `NORMAL`, `CAUTIOUS`, `RISK_OFF`).
-2. **Sector Intelligence Engine (`sector_engine.py`)**: Computes sector 1D, 5D, 20D returns and Stock Relative Strength vs Sector.
-3. **BOOM Scanner (`screening.py`)**: Calculates 0-100 BOOM Score and detects `EARLY BOOM`, `BOOM MOMENTUM`, and `CONFIRMED BREAKOUT` setups.
-4. **Hallucination Protection (`verifier.py`)**: Validates numeric claims against ground-truth evidence before approving outputs.
-5. **Risk Engine & Position Sizer (`risk_engine.py`)**: Calculates Entry Zone, Stop Loss, Target 1 ($\text{R:R} \ge 1.5$), Target 2 ($\text{R:R} \ge 3.0$), ATR14, and quantity sizing.
-6. **Signal Validator (`signal_validator.py`)**: 8-gate validation gate ensuring only low-risk, high-quality setups issue `BUY` signals (`BUY BLOCKED` otherwise).
-7. **SQLite Database Persistence (`database.py`)**: Tracks runs, evidence, signals, performance analytics, and backtests.
-8. **Strategy Lab Backtesting (`backtest.py`)**: Historical momentum strategy backtester with walk-forward validation and no look-ahead bias.
-9. **Telegram Signal Alerting (`telegram.py`)**: Sends validated BUY signals and daily reports with hash deduplication and standard disclaimer.
-10. **Clean SaaS Dashboard (`dashboard.html`)**: Responsive UI with embedded TradingView candlestick charts.
+- 🏛️ **Market Regime 2.0 Engine**: Evaluates NIFTY 50, Bank NIFTY, India VIX, EMAs, and Risk Modes (`STRONG_RISK_ON`, `RISK_ON`, `NORMAL`, `CAUTIOUS`, `RISK_OFF`).
+- ⚡ **Intraday Engine (`intraday_engine.py`)**: 5m primary timeframe, VWAP, EMA 9/20/50, Opening Range (9:15–9:30 IST), Volume Acceleration, Intraday Score /100.
+- 📈 **Swing Engine (`swing_engine.py`)**: Daily & Weekly timeframes, 2–6 week horizon, EMA 20/50/100/200, RS vs NIFTY/Sector, Analyst upside, Swing Score /100.
+- 🛑 **Late Breakout Extension Guard (`false_breakout_engine.py`)**: Flags setups $>10\%$ past resistance as `"BREAKOUT — TOO EXTENDED"` and BLOCKS BUY signals.
+- 🛡️ **Portfolio Concentration Guard (`risk_engine.py`)**: Enforces sector concentration limits (`MAX_SECTOR_POSITIONS`, `MAX_OPEN_POSITIONS`, `MAX_PORTFOLIO_RISK`).
+- 🧪 **Strategy Lab 2.0 & Monte Carlo (`backtest.py`)**: Walk-Forward Testing (Train/Validation/Out-of-Sample) and Monte Carlo Robustness Simulation (500 trade-reordering iterations).
+- 📱 **Telegram Intelligence (`telegram.py`)**: `⚡ PRE-BOOM WATCH` alerts, `🚀 BREAKOUT CONFIRMED` alerts, `🟢 INTRADAY BUY` alerts, `📈 SWING BUY` alerts, and Daily Reports with Top Blocked Opportunities.
+- 🎨 **Production SaaS UI (`dashboard.html`)**: Responsive modal drawers for Watchlist, Strategy Lab, Paste Stocks, Evidence Explorer, Top Opportunities Cards, Top Blocked Opportunities Panel, and Live BOOM Scanner Filters.
 
 ---
 
-## 🛠️ Installation & Setup Guide
+## 🚀 Quick Start
 
-1. Clone or download the repository.
-2. Open terminal in project folder:
+1. **Install Dependencies**:
    ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
    pip install -r requirements.txt
    ```
-3. Run the dashboard:
+
+2. **Configure Environment Variables**:
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Launch MarketPulse**:
    ```bash
    python app.py
-   # OR run double-click: start_dashboard.bat
    ```
-4. Access the web dashboard in your browser:
-   👉 **`http://localhost:5000`** *(or `http://127.0.0.1:5000`)*
+   Open **http://localhost:5000** in your browser.
+
+4. **Run Unit Test Suite**:
+   ```bash
+   python -m unittest discover -s tests -p "test_*.py"
+   ```
 
 ---
 
 ## ⚠️ Disclaimer
-> Analysis only. No trade was placed. Not investment advice. MarketPulse is an analysis and signal-generation platform only and does not execute broker orders or guarantee returns.
+
+MarketPulse is an **analysis and systematic research tool only**. It does NOT execute trades or connect to broker execution APIs. No trade was placed. All output is strictly for informational and educational purposes. Not investment advice.

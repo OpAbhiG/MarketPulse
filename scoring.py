@@ -1,5 +1,8 @@
 import math
 from screening import calculate_boom_score
+from intraday_engine import calculate_intraday_score
+from swing_engine import calculate_swing_score
+from false_breakout_engine import evaluate_breakout_extension_and_validity
 from risk_engine import calculate_risk_parameters
 from signal_validator import validate_signal
 from verifier import verify_llm_grounding
@@ -15,9 +18,9 @@ def calculate_data_quality(evidence):
     quality = max(0, min(100, round(((total_checks - missing_count) / total_checks) * 100)))
     return quality
 
-def deterministic_evaluate(evidence, market_regime=None, sector_data=None, config=None):
+def deterministic_evaluate(evidence, market_regime=None, sector_data=None, config=None, active_positions=None):
     """
-    Evaluates evidence using MarketPulse scoring, BOOM scanning, Risk engine, and Signal validation.
+    Evaluates evidence using Intraday, Swing, BOOM, False Breakout, Risk, and Master Opportunity Scoring.
     """
     symbol = evidence.get("symbol")
     p = evidence.get("price", {})
@@ -34,13 +37,16 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     close = t.get("day_range_position_pct")
     sma = t.get("price_vs_sma_pct")
     upside = a.get("upside_pct")
-    buy = a.get("buy_pct")
-    sell = a.get("sell_pct")
     posnews = n.get("positive", 0)
     neg = n.get("negative", 0)
     total_news = n.get("total", 0)
 
-    # 1. Bull & Bear conviction scoring (0-100)
+    # 1. Intraday & Swing Engines
+    intra_res = calculate_intraday_score(evidence, market_regime, sector_data)
+    swing_res = calculate_swing_score(evidence, market_regime, sector_data)
+    ext_res = evaluate_breakout_extension_and_validity(evidence)
+
+    # 2. Bull & Bear conviction scoring (0-100)
     bull = 35.0
     bear = 25.0
     br = []
@@ -56,40 +62,38 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     if trend == "up": bull += 12; br.append("technical trend is bullish")
     elif trend == "down": bear += 12; rr.append("technical trend is bearish")
 
-    if sma is not None and sma >= 2.0: bull += 8; br.append(f"price is {sma:.1f}% above 20-SMA")
-    elif sma is not None and sma < 0: bear += 8; rr.append(f"price is {abs(sma):.1f}% below 20-SMA")
-
-    if upside is not None and upside >= 10: bull += 10; br.append(f"analyst upside {upside:.1f}% is favorable")
-    elif upside is not None and upside <= 0: bear += 8; rr.append(f"analyst upside {upside:.1f}% is absent")
-
-    if posnews > neg and total_news: bull += 6; br.append("news tone is positive")
-    elif neg > posnews and total_news: bear += 6; rr.append("news tone is negative")
+    if ext_res["is_too_extended"]:
+        bear += 25
+        rr.append(f"Price is {ext_res['extension_pct']}% past resistance — BREAKOUT TOO EXTENDED")
 
     bull = clamp(bull)
     bear = clamp(bear)
     net = round(bull - bear, 1)
 
-    # 2. MarketPulse Score /100
-    tech_score = 25 if trend == "up" and (sma or 0) > 0 else 15
-    mom_score = 20 if (day_chg or 0) > 1.0 else 12
-    rvol_score = 15 if rvol >= 1.5 else 8
-    fund_score = 15 if (upside or 0) > 10 else 8
-    news_score = 10 if posnews >= neg else 5
-    reg_score = 10 if market_regime and market_regime.get("risk_mode") == "RISK_ON" else 6
-    risk_score = 5
+    # 3. Master Score /100 Breakdown (10 Components)
+    tech_comp = 20 if trend == "up" and (sma or 0) > 0 else 12
+    vol_comp = 15 if rvol >= 1.5 else 8
+    breakout_comp = 15 if (pos or 50) >= 80 and not ext_res["is_too_extended"] else 8
+    trend_comp = 10 if trend == "up" else 5
+    rs_comp = 10 if sector_data and sector_data.get("is_outperforming") else 5
+    sec_comp = 10 if sector_data and sector_data.get("sector_20d_return", 0) > 1.0 else 5
+    reg_comp = 5 if market_regime and market_regime.get("risk_mode") in ("STRONG_RISK_ON", "RISK_ON") else 3
+    liq_comp = 5 if (p.get("volume") or 100000) >= 50000 else 1
+    rr_comp = 5
+    dq_comp = 5
 
-    marketpulse_score = clamp(tech_score + mom_score + rvol_score + fund_score + news_score + reg_score + risk_score)
+    master_score = clamp(tech_comp + vol_comp + breakout_comp + trend_comp + rs_comp + sec_comp + reg_comp + liq_comp + rr_comp + dq_comp)
 
-    # 3. BOOM Score & Classification
+    # 4. BOOM Score
     boom_data = calculate_boom_score(evidence, market_regime, sector_data)
     boom_score = boom_data["score"]
     boom_type = boom_data["boom_type"]
 
-    # 4. Verdict & AI Confidence
+    # 5. Verdict & AI Confidence
     has_boom = boom_score >= 70 or rvol >= 1.2 or (day_chg or 0) >= 0.3 or trend == "up"
-    if (net >= 5 or has_boom) and (market_regime is None or market_regime.get("risk_mode") != "RISK_OFF"):
+    if (net >= 5 or has_boom) and not ext_res["is_too_extended"] and (market_regime is None or market_regime.get("risk_mode") != "RISK_OFF"):
         verdict = "BUY"
-    elif net <= -20:
+    elif net <= -20 or ext_res["is_too_extended"]:
         verdict = "AVOID"
     else:
         verdict = "WATCH"
@@ -101,10 +105,10 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     rationale = br[0] if winner == "Bull" and br else rr[0] if rr else "Technical momentum and market factors evaluated."
     catalyst = br[1] if winner == "Bull" and len(br) > 1 else br[0] if br else "Positive analyst upside and momentum"
 
-    # 5. Risk Engine Parameters
-    risk_params = calculate_risk_parameters(evidence)
+    # 6. Risk Engine Parameters
+    risk_params = calculate_risk_parameters(evidence, active_positions=active_positions)
 
-    # 6. Data Quality Score
+    # 7. Data Quality Score
     dq_score = calculate_data_quality(evidence)
 
     verdict_payload = {
@@ -116,10 +120,16 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "day_change_pct": day_chg,
         "verdict": verdict,
         "confidence": conf,
-        "marketpulse_score": marketpulse_score,
+        "marketpulse_score": master_score,
+        "intraday_score": intra_res["score"],
+        "intraday_setup": intra_res["classification"],
+        "swing_score": swing_res["score"],
+        "swing_setup": swing_res["classification"],
         "boom_score": boom_score,
         "boom_type": boom_type,
         "breakout_quality": boom_data["breakout_quality"],
+        "extension_status": ext_res["extension_status"],
+        "is_too_extended": ext_res["is_too_extended"],
         "data_quality_score": dq_score,
         "winner": winner,
         "why": rationale,
@@ -132,6 +142,18 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "invalidation": f"Daily close below {risk_params['stop_loss_str']}",
         "kill_conditions": [f"Daily close below {risk_params['stop_loss_str']}", "Market Regime switches to RISK_OFF"],
         "strategies": [boom_type] if boom_type != "NORMAL" else ["Momentum Watch"],
+        "component_breakdown": {
+            "technical": tech_comp,
+            "rvol": vol_comp,
+            "breakout": breakout_comp,
+            "trend": trend_comp,
+            "relative_strength": rs_comp,
+            "sector": sec_comp,
+            "regime": reg_comp,
+            "liquidity": liq_comp,
+            "risk_reward": rr_comp,
+            "data_quality": dq_comp
+        },
         "technicals": t,
         "range_52w": r,
         "analyst": a,
@@ -143,8 +165,15 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         }
     }
 
-    # 7. Signal Validation Gate
+    # 8. Signal Validation Gate
     validation = validate_signal(verdict_payload, evidence, market_regime, config)
+    
+    # Portfolio Concentration Override
+    if risk_params["portfolio_concentration"]["is_blocked"]:
+        validation["validated"] = False
+        validation["status"] = "BUY BLOCKED"
+        validation["reason"] = risk_params["portfolio_concentration"]["reason"]
+
     verdict_payload["validated"] = validation["validated"]
     verdict_payload["validation_status"] = validation["status"]
     verdict_payload["validation_reason"] = validation["reason"]

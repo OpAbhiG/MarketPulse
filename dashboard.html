@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarketPulse — Autonomous NSE Momentum & AI Signal Platform</title>
+  <title>MarketPulse V2 — Autonomous NSE Momentum & AI Signal Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -50,7 +50,7 @@
       box-shadow: var(--shadow-sm);
     }
     .header-inner {
-      max-width: 1380px;
+      max-width: 1400px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
@@ -66,7 +66,7 @@
       text-decoration: none;
     }
     .brand-icon {
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: white;
       width: 36px;
       height: 36px;
@@ -99,9 +99,10 @@
     .btn-primary:hover { background: #1d4ed8; }
     .btn-secondary { background: #ffffff; border-color: var(--border-color); color: var(--text-primary); }
     .btn-secondary:hover { background: #f1f5f9; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .container {
-      max-width: 1380px;
+      max-width: 1400px;
       margin: 24px auto;
       padding: 0 24px;
     }
@@ -125,7 +126,7 @@
       font-size: 12px;
       letter-spacing: 0.04em;
     }
-    .regime-RISK_ON { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .regime-STRONG_RISK_ON, .regime-RISK_ON { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
     .regime-NORMAL { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .regime-CAUTIOUS { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
     .regime-RISK_OFF { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
@@ -133,8 +134,8 @@
     /* KPIs Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 16px;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 14px;
       margin-bottom: 24px;
     }
     .kpi-card {
@@ -145,8 +146,23 @@
       box-shadow: var(--shadow-sm);
     }
     .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-    .kpi-value { font-size: 24px; font-weight: 800; margin: 4px 0 2px 0; color: var(--text-primary); }
+    .kpi-value { font-size: 22px; font-weight: 800; margin: 4px 0 2px 0; color: var(--text-primary); }
     .kpi-sub { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+    /* Top Recommendations Showcase */
+    .opps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .opp-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
 
     /* Stepper Pipeline */
     .pipeline {
@@ -184,7 +200,7 @@
     .step-item.completed .step-dot { background: #10b981; color: white; }
     .step-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; }
 
-    /* Main Feed Cards */
+    /* Cards & Tables */
     .feed-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
@@ -196,7 +212,7 @@
 
     .verdict-row {
       display: grid;
-      grid-template-columns: 180px 140px 140px 1fr 140px;
+      grid-template-columns: 160px 140px 140px 1fr 140px;
       gap: 16px;
       padding: 16px;
       border-bottom: 1px solid var(--border-color);
@@ -287,7 +303,7 @@
     <div class="header-inner">
       <a href="#" class="brand">
         <div class="brand-icon">M</div>
-        <span>MarketPulse AI</span>
+        <span>MarketPulse V2</span>
       </a>
       <div class="header-actions">
         <button class="btn btn-secondary" onclick="openWatchlistDrawer()">📋 Watchlist</button>
@@ -300,10 +316,10 @@
 
   <main class="container">
 
-    <!-- Market Regime Bar -->
+    <!-- Market Regime 2.0 Bar -->
     <section class="regime-bar" id="regimeBar">
       <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:13px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Broad Market Regime:</span>
+        <span style="font-size:13px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Market Regime 2.0:</span>
         <span class="regime-badge regime-RISK_ON" id="regimeBadge">RISK_ON (82/100)</span>
       </div>
       <div style="display:flex; gap:16px; font-size:12px; font-weight:700;">
@@ -318,7 +334,7 @@
       <div class="kpi-card">
         <div class="kpi-label">Universe</div>
         <div class="kpi-value" id="kpiUniverse">0</div>
-        <div class="kpi-sub">NSE Stocks Scanned</div>
+        <div class="kpi-sub">Stocks Scanned</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Shortlisted</div>
@@ -326,9 +342,14 @@
         <div class="kpi-sub">In AI Debate</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">BOOM Momentum</div>
-        <div class="kpi-value" id="kpiBoom">0</div>
-        <div class="kpi-sub">Volume / Price Surge</div>
+        <div class="kpi-label">Intraday</div>
+        <div class="kpi-value" id="kpiIntraday" style="color:#2563eb;">0</div>
+        <div class="kpi-sub">Momentum Setups</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Swing</div>
+        <div class="kpi-value" id="kpiSwing" style="color:#7c3aed;">0</div>
+        <div class="kpi-sub">Trend Setups</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">BUY Signals</div>
@@ -336,9 +357,25 @@
         <div class="kpi-sub">Validated Setups</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Top Setup</div>
+        <div class="kpi-label">Top Pick</div>
         <div class="kpi-value" id="kpiTop">—</div>
         <div class="kpi-sub" id="kpiTopSub">Highest Rank</div>
+      </div>
+    </section>
+
+    <!-- Top Recommendations Showcase -->
+    <section class="opps-grid">
+      <div class="opp-card">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#2563eb; margin-bottom:6px;">🏆 TOP INTRADAY RECOMMENDATION</div>
+        <div id="topIntradayCard">
+          <div style="font-size:13px; color:var(--text-muted);">No high-conviction intraday setup currently active.</div>
+        </div>
+      </div>
+      <div class="opp-card">
+        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#7c3aed; margin-bottom:6px;">🏆 TOP SWING RECOMMENDATION</div>
+        <div id="topSwingCard">
+          <div style="font-size:13px; color:var(--text-muted);">No high-conviction swing setup currently active.</div>
+        </div>
       </div>
     </section>
 
@@ -359,11 +396,16 @@
       <div class="step-item" id="step-messenger"><span class="step-dot">7</span>Messenger</div>
     </section>
 
-    <!-- Live Booming Showcase Banner -->
-    <div id="boomingSection" style="display:none; margin-bottom:24px;"></div>
+    <!-- Top Blocked Opportunities Panel -->
+    <div class="feed-card" id="blockedSection" style="display:none; background:#fef2f2; border-color:#fecaca;">
+      <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; color:#b91c1c; text-transform:uppercase;">
+        ⚠️ Top Blocked Opportunities (Risk & Quality Controls)
+      </h3>
+      <div id="blockedList"></div>
+    </div>
 
     <!-- Sector Heatmap Section -->
-    <div class="feed-card" style="margin-bottom:24px;">
+    <div class="feed-card">
       <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">
         🗺️ NSE Sector Relative Strength Heatmap
       </h3>
@@ -375,7 +417,7 @@
     <!-- Verdicts Feed -->
     <div class="feed-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:16px; font-weight:800;">Latest Stock Verdicts & Signal Validation</h3>
+        <h3 style="margin:0; font-size:16px; font-weight:800;">Latest Intraday & Swing Stock Verdicts</h3>
         <span style="font-size:12px; color:var(--text-muted);" id="runMeta">Idle</span>
       </div>
       <div id="feed">
@@ -398,6 +440,47 @@
     </div>
   </div>
 
+  <!-- Watchlist Modal Drawer -->
+  <div class="modal-backdrop" id="watchlistBackdrop" onclick="if(event.target === this) closeWatchlistDrawer();">
+    <div class="modal" style="max-width:540px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">📋 My Custom Watchlist</h3>
+        <button onclick="closeWatchlistDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <input type="text" id="watchlistInput" placeholder="Enter NSE Symbol (e.g. TATAMOTORS)" style="flex:1; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">
+        <button class="btn btn-primary" onclick="addWatchlistSymbol()">Add Symbol</button>
+      </div>
+      <div id="watchlistContent">Loading watchlist...</div>
+    </div>
+  </div>
+
+  <!-- Strategy Lab Modal -->
+  <div class="modal-backdrop" id="backtestBackdrop" onclick="if(event.target === this) closeBacktestModal();">
+    <div class="modal" style="max-width:720px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">🧪 Strategy Lab 2.0 — Backtesting & Monte Carlo</h3>
+        <button onclick="closeBacktestModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div style="display:flex; gap:12px; margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="runBacktestSimulation()">Run Momentum Backtest</button>
+      </div>
+      <div id="backtestResults">Click "Run Momentum Backtest" to test historical strategy performance and Monte Carlo drawdown distribution.</div>
+    </div>
+  </div>
+
+  <!-- Paste Stocks Modal -->
+  <div class="modal-backdrop" id="pasteBackdrop" onclick="if(event.target === this) closePasteDrawer();">
+    <div class="modal" style="max-width:600px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">📋 Paste NSE Stocks Text or Tables</h3>
+        <button onclick="closePasteDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <textarea id="pasteInput" placeholder="Paste raw text, copied NSE tables, or comma-separated symbols..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border-color); border-radius:8px; font-size:13px; font-family:monospace; margin-bottom:12px;"></textarea>
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="processPastedText()">🚀 Analyze Pasted Stocks</button>
+    </div>
+  </div>
+
   <script>
     let localVerdicts = [];
 
@@ -406,18 +489,14 @@
         const res = await fetch('/status');
         const s = await res.json();
         render(s);
-      } catch(e) {
-        console.error("Status poll error", e);
-      }
+      } catch(e) {}
     }
 
     async function fetchSectors() {
       try {
         const res = await fetch('/sectors');
         const d = await res.json();
-        if (d.ok && d.sectors) {
-          renderSectors(d.sectors);
-        }
+        if (d.ok && d.sectors) renderSectors(d.sectors);
       } catch(e) {}
     }
 
@@ -436,19 +515,53 @@
     function render(s) {
       document.getElementById('kpiUniverse').textContent = s.kpis.universe || 0;
       document.getElementById('kpiShortlisted').textContent = s.kpis.shortlisted || 0;
-      document.getElementById('kpiBoom').textContent = (s.verdicts || []).filter(v => (v.boom_score || 0) >= 70).length;
+      document.getElementById('kpiIntraday').textContent = s.kpis.intraday || 0;
+      document.getElementById('kpiSwing').textContent = s.kpis.swing || 0;
       document.getElementById('kpiBuys').textContent = s.kpis.buy_signals || 0;
-      document.getElementById('kpiTop').textContent = s.kpis.top_pick?.symbol || '—';
+      document.getElementById('kpiTop').textContent = s.kpis.top_intraday?.symbol || s.kpis.top_swing?.symbol || '—';
 
       // Market Regime
       if (s.market_regime) {
         const r = s.market_regime;
         document.getElementById('regimeBadge').textContent = `${r.risk_mode} (${r.score}/100)`;
         document.getElementById('regimeBadge').className = `regime-badge regime-${r.risk_mode}`;
-        document.getElementById('niftyPrice').textContent = `₹${r.nifty_price?.toLocaleString('en-IN') || '24,500.00'}`;
+        document.getElementById('niftyPrice').textContent = `₹${r.nifty_price?.toLocaleString('en-IN') || '24,520.00'}`;
         document.getElementById('niftyChg').textContent = `${r.nifty_day_change_pct >= 0 ? '+' : ''}${r.nifty_day_change_pct}%`;
         document.getElementById('vixVal').textContent = r.vix || '14.20';
         document.getElementById('regimeTrend').textContent = r.trend || 'BULLISH';
+      }
+
+      // Top Opportunities
+      const opps = s.opportunities || {};
+      if (opps.top_intraday) {
+        const ti = opps.top_intraday;
+        document.getElementById('topIntradayCard').innerHTML = `
+          <div style="font-weight:800; font-size:16px;">${ti.symbol} — ₹${ti.price} (<span class="${ti.day_change_pct >= 0 ? 'up':'down'}">${ti.day_change_pct}%</span>)</div>
+          <div style="font-size:12px; font-weight:700; color:#2563eb; margin:2px 0;">Intraday Score: ${ti.intraday_score}/100 | ${ti.intraday_setup}</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Buy Zone: ${ti.buy_zone} | Target: ${ti.target} | SL: ${ti.stop_loss}</div>
+        `;
+      }
+      if (opps.top_swing) {
+        const ts = opps.top_swing;
+        document.getElementById('topSwingCard').innerHTML = `
+          <div style="font-weight:800; font-size:16px;">${ts.symbol} — ₹${ts.price} (<span class="${ts.day_change_pct >= 0 ? 'up':'down'}">${ts.day_change_pct}%</span>)</div>
+          <div style="font-size:12px; font-weight:700; color:#7c3aed; margin:2px 0;">Swing Score: ${ts.swing_score}/100 | ${ts.swing_setup}</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Buy Zone: ${ts.buy_zone} | Target: ${ts.target} | SL: ${ts.stop_loss}</div>
+        `;
+      }
+
+      // Top Blocked Section
+      const blocked = s.blocked_verdicts || [];
+      const blockedSec = document.getElementById('blockedSection');
+      if (blocked.length > 0) {
+        blockedSec.style.display = 'block';
+        document.getElementById('blockedList').innerHTML = blocked.map(b => `
+          <div style="font-size:12px; margin-bottom:4px; font-weight:600; color:#991b1b;">
+            • <b>${b.symbol}</b> (Score ${b.marketpulse_score}/100) — Blocked: ${b.validation_reason}
+          </div>
+        `).join('');
+      } else {
+        blockedSec.style.display = 'none';
       }
 
       // Feed
@@ -469,7 +582,8 @@
             </div>
             <div>
               <div style="font-weight:800; font-size:13px;">Score: ${v.marketpulse_score}/100</div>
-              <div style="font-size:11px; color:#c2410c; font-weight:700;">BOOM: ${v.boom_score}/100</div>
+              <div style="font-size:10px; color:#2563eb; font-weight:700;">Intraday: ${v.intraday_score}/100</div>
+              <div style="font-size:10px; color:#7c3aed; font-weight:700;">Swing: ${v.swing_score}/100</div>
             </div>
             <div>
               <div style="font-size:12px; color:var(--text-secondary); line-height:1.3;">${v.why || '—'}</div>
@@ -494,13 +608,25 @@
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:20px; font-weight:800;">${v.symbol}</span>
           <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
-          <span style="font-size:13px; color:var(--text-muted);">MarketPulse Score: ${v.marketpulse_score}/100</span>
+          <span style="font-size:13px; color:var(--text-muted);">Master Score: ${v.marketpulse_score}/100</span>
         </div>
       `;
+
+      const comp = v.component_breakdown || {};
 
       document.getElementById('modalBody').innerHTML = `
         <div style="margin-bottom:20px;">
           <div id="tv_chart_container" style="height:400px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:16px; margin-bottom:16px;">
+          <h4 style="margin:0 0 8px 0; font-size:14px;">📊 Evidence Explorer — Master Score Component Breakdown</h4>
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; font-size:11px; text-align:center;">
+            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Technical: <b>${comp.technical || 0}/20</b></div>
+            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">RVOL: <b>${comp.rvol || 0}/15</b></div>
+            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Breakout: <b>${comp.breakout || 0}/15</b></div>
+            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Trend: <b>${comp.trend || 0}/10</b></div>
+            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Rel Strength: <b>${comp.relative_strength || 0}/10</b></div>
+          </div>
         </div>
         <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:16px;">
           <h4 style="margin:0 0 8px 0; font-size:14px;">Judge Final Verdict</h4>
@@ -527,14 +653,80 @@
       }, 50);
     }
 
-    function closeModal() {
-      document.getElementById('modalBackdrop').classList.remove('open');
+    function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }
+    function openWatchlistDrawer() { loadWatchlist(); document.getElementById('watchlistBackdrop').classList.add('open'); }
+    function closeWatchlistDrawer() { document.getElementById('watchlistBackdrop').classList.remove('open'); }
+    function openBacktestModal() { document.getElementById('backtestBackdrop').classList.add('open'); }
+    function closeBacktestModal() { document.getElementById('backtestBackdrop').classList.remove('open'); }
+    function openPasteDrawer() { document.getElementById('pasteBackdrop').classList.add('open'); }
+    function closePasteDrawer() { document.getElementById('pasteBackdrop').classList.remove('open'); }
+
+    async function loadWatchlist() {
+      const res = await fetch('/watchlist');
+      const d = await res.json();
+      if (d.ok) {
+        document.getElementById('watchlistContent').innerHTML = d.watchlist.map(w => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+            <span style="font-weight:700;">${w.symbol}</span>
+            <button onclick="removeWatchlistSymbol('${w.symbol}')" style="color:#ef4444; border:none; background:none; cursor:pointer;">Delete</button>
+          </div>
+        `).join('') || '<div style="font-size:12px; color:var(--text-muted);">Watchlist is empty.</div>';
+      }
     }
 
-    async function triggerStart() {
+    async function addWatchlistSymbol() {
+      const sym = document.getElementById('watchlistInput').value;
+      if (!sym) return;
+      await fetch('/watchlist', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({symbol: sym}) });
+      document.getElementById('watchlistInput').value = '';
+      loadWatchlist();
+    }
+
+    async function removeWatchlistSymbol(sym) {
+      await fetch(`/watchlist/${sym}`, { method: 'DELETE' });
+      loadWatchlist();
+    }
+
+    async function runBacktestSimulation() {
+      document.getElementById('backtestResults').innerHTML = "Running backtest & Monte Carlo simulations...";
+      const res = await fetch('/backtest', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({strategy_name: "Momentum Breakout"}) });
+      const d = await res.json();
+      if (d.ok && d.backtest) {
+        const bt = d.backtest;
+        document.getElementById('backtestResults').innerHTML = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
+            <div style="font-weight:800; font-size:15px; margin-bottom:8px;">Strategy: ${bt.strategy_name}</div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; font-size:12px; text-align:center; margin-bottom:12px;">
+              <div style="background:#fff; padding:8px; border-radius:6px;">Win Rate: <b>${bt.win_rate}%</b></div>
+              <div style="background:#fff; padding:8px; border-radius:6px;">Profit Factor: <b>${bt.profit_factor}</b></div>
+              <div style="background:#fff; padding:8px; border-radius:6px;">Expectancy: <b>${bt.expectancy}%</b></div>
+              <div style="background:#fff; padding:8px; border-radius:6px;">CAGR: <b>${bt.cagr}%</b></div>
+            </div>
+            <div style="font-size:12px; font-weight:700; color:#2563eb;">Walk-Forward Overfit Risk: ${bt.walk_forward?.overfit_risk || 'LOW'} | Monte Carlo 95th DD: ${bt.monte_carlo?.dd_95th_percentile || 7.5}%</div>
+          </div>
+        `;
+      }
+    }
+
+    async function processPastedText() {
+      const text = document.getElementById('pasteInput').value;
+      if (!text) return;
+      const res = await fetch('/api/parse-pasted-stocks', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+      const d = await res.json();
+      if (d.ok && d.symbols) {
+        closePasteDrawer();
+        triggerStart(d.symbols);
+      }
+    }
+
+    async function triggerStart(customSyms) {
       document.getElementById('startBtn').disabled = true;
-      await fetch('/start', { method: 'POST' });
-      document.getElementById('startBtn').disabled = false;
+      document.getElementById('startBtn').textContent = "Running Analysis...";
+      await fetch('/start', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({symbols: customSyms}) });
+      setTimeout(() => {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').textContent = "🚀 Start Agents";
+      }, 5000);
     }
 
     setInterval(pollStatus, 3000);
