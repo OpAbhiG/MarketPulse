@@ -340,7 +340,37 @@ def add_to_watchlist(symbol, notes=""):
     conn.close()
 
 
+LAST_STATE_PATH = os.path.join(DB_DIR, "last_run_state.json")
+
+def save_last_run_state(run_state_dict):
+    try:
+        data = {
+            "verdicts": run_state_dict.get("verdicts", []),
+            "blocked_verdicts": run_state_dict.get("blocked_verdicts", []),
+            "avoid_verdicts": run_state_dict.get("avoid_verdicts", []),
+            "opportunities": run_state_dict.get("opportunities", {}),
+            "decision_counts": run_state_dict.get("decision_counts", {}),
+            "market_regime": run_state_dict.get("market_regime", {}),
+            "sectors": run_state_dict.get("sectors", []),
+            "kpis": run_state_dict.get("kpis", {}),
+            "completed_at": run_state_dict.get("completed_at")
+        }
+        with open(LAST_STATE_PATH, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Error saving last run state: {e}")
+
+def load_last_run_state():
+    if os.path.exists(LAST_STATE_PATH):
+        try:
+            with open(LAST_STATE_PATH, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading last run state: {e}")
+    return None
+
 def remove_from_watchlist(symbol):
+
     conn = get_connection()
     c = conn.cursor()
     c.execute("DELETE FROM watchlist WHERE symbol = ?", (symbol.upper().replace(".NS",""),))

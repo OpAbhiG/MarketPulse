@@ -71,7 +71,7 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
     invalidation_price = f"₹{sw_lo:.2f}"
 
     # Decision State Machine
-    if val_status == "BUY BLOCKED" or (master_score >= 75 and not validated):
+    if master_score >= 75 and (val_status == "BUY BLOCKED" or not validated) and ("Portfolio" in val_reason or "Risk" in val_reason):
         decision_state = "BLOCKED"
         decision_badge = "🟠 BLOCKED"
         action = "DO NOT TRADE — RISK GATE BLOCKED"
@@ -79,7 +79,7 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
         decision_state = "BUY NOW"
         decision_badge = "🟢 BUY NOW"
         action = "BUY ENTRY CONFIRMED"
-    elif master_score >= 75 and boom_type in ("EARLY BOOM", "BOOM MOMENTUM", "CONFIRMED BREAKOUT") and not is_ext:
+    elif master_score >= 75 and (verdict in ("BUY", "WATCH") or boom_type != "NORMAL") and not is_ext:
         decision_state = "BUY ON CONFIRMATION"
         decision_badge = "🟡 BUY ON CONFIRMATION"
         action = f"BUY ONLY ABOVE {trigger_price}"
@@ -91,6 +91,7 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
         decision_state = "AVOID"
         decision_badge = "🔴 AVOID"
         action = "WAIT / DO NOT BUY"
+
 
     return {
         "decision_state": decision_state,

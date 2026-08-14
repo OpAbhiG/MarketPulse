@@ -67,7 +67,12 @@ RUN_STATE = {
 
 STATE_LOCK = threading.Lock()
 
+_init_last_state = database.load_last_run_state()
+if _init_last_state:
+    RUN_STATE.update(_init_last_state)
+
 def add_log(msg):
+
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with STATE_LOCK:
         RUN_STATE["log"].append(f"{ts} · {msg}")
@@ -306,7 +311,8 @@ def background_analysis_pipeline(custom_symbols=None):
     avoid_verdicts = []
 
     for ev in evidences:
-        v = scoring.deterministic_evaluate(ev, market_regime=regime, active_positions=verdicts)
+        buy_pos = [x for x in verdicts if x.get("decision_state") == "BUY NOW"]
+        v = scoring.deterministic_evaluate(ev, market_regime=regime, active_positions=buy_pos)
         verdicts.append(v)
         database.save_verdict(run_id, v)
         if v.get("decision_state") == "BUY NOW":
@@ -382,6 +388,8 @@ def background_analysis_pipeline(custom_symbols=None):
                 "top_swing": opps.get("top_swing")
             }
         })
+        database.save_last_run_state(RUN_STATE)
+
         database.save_run({
             "id": run_id,
             "started_at": RUN_STATE["started_at"],
