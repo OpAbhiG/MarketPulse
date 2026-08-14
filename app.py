@@ -306,12 +306,16 @@ def background_analysis_pipeline(custom_symbols=None):
     univ_path = os.path.join(BASE_DIR, "universe.json")
     univ_dict = data_sources.load_universe(univ_path)
     
+    is_vercel = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+
     if custom_symbols and len(custom_symbols) > 0:
         flat = [s.upper().replace(".NS","") + ".NS" for s in custom_symbols]
     else:
         flat = []
         for cat in ["large", "mid", "small"]:
             flat.extend(univ_dict.get(cat, []))
+        if is_vercel:
+            flat = flat[:6]  # Fast batch for Vercel serverless execution limit
 
     add_log(f"Fetching evidence for {len(flat)} tickers...")
     evidences = data_sources.load_live_evidence(flat if flat else univ_dict)
@@ -358,12 +362,10 @@ def background_analysis_pipeline(custom_symbols=None):
                 "data_quality_score": 100
             })
 
-
         if v.get("decision_state") == "BLOCKED":
             blocked_verdicts.append(v)
         elif v.get("decision_state") == "AVOID":
             avoid_verdicts.append(v)
-
 
     opps = rank_market_opportunities(verdicts)
     dec_counts = summarize_decisions(verdicts)
@@ -429,14 +431,23 @@ def background_analysis_pipeline(custom_symbols=None):
 def trigger_start():
     data = request.get_json(silent=True) or {}
     custom_syms = data.get("symbols")
+    is_vercel = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+
     with STATE_LOCK:
         if RUN_STATE["running"]:
             return jsonify({"ok": False, "error": "Analysis cycle already running"}), 400
 
-    thread = threading.Thread(target=background_analysis_pipeline, args=(custom_syms,))
-    thread.daemon = True
-    thread.start()
-    return jsonify({"ok": True, "mode": "live"})
+    if is_vercel:
+        # Synchronous execution for Vercel so scan finishes before serverless function exits
+        background_analysis_pipeline(custom_syms)
+        with STATE_LOCK:
+            return jsonify({"ok": True, "mode": "live", "vercel_sync": True, "run_state": RUN_STATE})
+    else:
+        thread = threading.Thread(target=background_analysis_pipeline, args=(custom_syms,))
+        thread.daemon = True
+        thread.start()
+        return jsonify({"ok": True, "mode": "live"})
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
