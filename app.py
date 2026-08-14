@@ -201,7 +201,12 @@ def get_strategy_health_api():
 def get_drift_detector_api():
     return jsonify({"ok": True, "drift": drift_detector.detect_market_data_drift()})
 
+@app.route("/api/eod-summary", methods=["GET"])
+def get_eod_summary_api():
+    return jsonify({"ok": True, "eod_summary": paper_trading.get_eod_daily_summary()})
+
 @app.route("/api/parse-pasted-stocks", methods=["POST"])
+
 def parse_pasted_stocks_route():
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
