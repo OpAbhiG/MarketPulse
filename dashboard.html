@@ -1,2152 +1,545 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MarketPulse · Indian Stock Agents Panel</title>
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketPulse — Autonomous NSE Momentum & AI Signal Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://s3.tradingview.com/tv.js"></script>
   <style>
-
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
     :root {
-      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --bg-primary: #f8fafc;
-      --card-bg: rgba(255, 255, 255, 0.95);
+      --bg-main: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
       --text-primary: #0f172a;
       --text-secondary: #475569;
       --text-muted: #94a3b8;
-      --border-color: #e2e8f0;
-      
-      /* State Colors */
-      --color-offline: #64748b;
-      --color-working: #3b82f6;
-      --color-done: #10b981;
-      
       --color-buy: #10b981;
+      --color-buy-bg: #ecfdf5;
       --color-watch: #f59e0b;
+      --color-watch-bg: #fffbeb;
       --color-avoid: #ef4444;
-      
-      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+      --color-avoid-bg: #fef2f2;
+      --color-working: #3b82f6;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      background-color: var(--bg-primary);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
-      background-attachment: fixed;
-      font-family: var(--font-sans);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-main);
       color: var(--text-primary);
-      -webkit-font-smoothing: antialiased;
-      padding-bottom: 60px;
+      line-height: 1.5;
     }
 
-    .wrap {
-      max-width: 1280px;
-      margin: auto;
-      padding: 40px 24px;
+    .header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
     }
-
-    /* Header */
-    .top {
+    .header-inner {
+      max-width: 1380px;
+      margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border-color);
     }
-
     .brand {
-      font-weight: 800;
-      font-size: 24px;
-      letter-spacing: -0.6px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-decoration: none;
     }
-
-    .brand span {
-      font-weight: 400;
-      font-size: 15px;
-      color: var(--text-secondary);
-      border-left: 1.5px solid var(--border-color);
-      padding-left: 12px;
-      margin-left: 4px;
-    }
-
-    .controls {
+    .brand-icon {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       display: flex;
-      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
       align-items: center;
     }
 
     .btn {
-      height: 42px;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      color: #ffffff;
-      border: none;
-      border-radius: 12px;
-      padding: 0 20px;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
       font-weight: 700;
-      font-size: 14px;
-      font-family: var(--font-sans);
       cursor: pointer;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s ease-in-out;
+      border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #ffffff; border-color: var(--border-color); color: var(--text-primary); }
+    .btn-secondary:hover { background: #f1f5f9; }
+
+    .container {
+      max-width: 1380px;
+      margin: 24px auto;
+      padding: 0 24px;
     }
 
-    .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-      background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-    }
-
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
+    /* Market Regime Header Bar */
+    .regime-bar {
       background: #ffffff;
-      color: var(--text-primary);
-      border: 1.5px solid var(--border-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
     }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: #f8fafc;
-      border-color: #cbd5e1;
+    .regime-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 0.04em;
     }
+    .regime-RISK_ON { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .regime-NORMAL { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .regime-CAUTIOUS { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .regime-RISK_OFF { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-    /* Stepper */
-    .stepper {
+    /* KPIs Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .kpi-value { font-size: 24px; font-weight: 800; margin: 4px 0 2px 0; color: var(--text-primary); }
+    .kpi-sub { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+    /* Stepper Pipeline */
+    .pipeline {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 24px;
       display: flex;
       align-items: center;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 14px 20px;
-      margin-bottom: 24px;
+      justify-content: space-between;
       box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(8px);
-      overflow-x: auto;
     }
-
     .step-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--text-muted);
-      white-space: nowrap;
-      transition: color 0.3s;
     }
-
-    .step-item.active {
-      color: var(--color-working);
-    }
-
-    .step-item.completed {
-      color: var(--color-done);
-    }
-
     .step-dot {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: #e2e8f0;
+      color: #64748b;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 11px;
-      color: var(--text-secondary);
       font-weight: 800;
-      transition: all 0.3s;
     }
+    .step-item.active .step-dot { background: #2563eb; color: white; }
+    .step-item.completed .step-dot { background: #10b981; color: white; }
+    .step-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; }
 
-    .step-item.active .step-dot {
-      background: #eff6ff;
-      color: var(--color-working);
-      border: 2px solid var(--color-working);
-      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
-    }
-
-    .step-item.completed .step-dot {
-      background: #ecfdf5;
-      color: var(--color-done);
-      border: 2px solid var(--color-done);
-    }
-
-    .step-connector {
-      flex-grow: 1;
-      height: 2px;
-      background: #e2e8f0;
-      margin: 0 12px;
-      min-width: 16px;
-      transition: background-color 0.3s;
-    }
-
-    .step-connector.active {
-      background: var(--color-working);
-    }
-
-    .step-connector.completed {
-      background: var(--color-done);
-    }
-
-    /* KPIs */
-    .kpis {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .kpi {
-      padding: 20px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(8px);
-    }
-
-    .kpi::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: transparent;
-    }
-
-    .kpi:nth-child(1)::before { background: var(--color-working); }
-    .kpi:nth-child(2)::before { background: #8b5cf6; }
-    .kpi:nth-child(3)::before { background: var(--color-done); }
-    .kpi:nth-child(4)::before { background: var(--color-watch); }
-
-    .kpi:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .label {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .big {
-      font-size: 30px;
-      font-weight: 800;
-      margin-top: 6px;
-      letter-spacing: -0.6px;
-      color: var(--text-primary);
-    }
-
-    .sub {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 4px;
-    }
-
-    /* Agents */
-    .agents {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-
-    .agent {
-      padding: 20px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 164px;
-      backdrop-filter: blur(8px);
-    }
-
-    .agent:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-md);
-      border-color: #cbd5e1;
-    }
-
-    .agent.active-agent {
-      border-color: var(--color-working);
-      box-shadow: 0 0 15px -3px rgba(59, 130, 246, 0.25), var(--shadow-md);
-      transform: translateY(-2px);
-    }
-
-    .agent-head {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: #f1f5f9;
-      display: grid;
-      place-items: center;
-      color: var(--text-secondary);
-      transition: all 0.3s;
-    }
-
-    .agent.working .icon {
-      background: #eff6ff;
-      color: var(--color-working);
-    }
-
-    .agent.done .icon {
-      background: #ecfdf5;
-      color: var(--color-done);
-    }
-
-    .name {
-      font-weight: 700;
-      font-size: 15px;
-      letter-spacing: -0.2px;
-    }
-
-    .role {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 1px;
-      line-height: 1.3;
-    }
-
-    .status {
-      margin-left: auto;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #f1f5f9;
-      color: var(--text-secondary);
-      letter-spacing: 0.05em;
-      transition: all 0.3s;
-    }
-
-    .agent.working .status {
-      background: #eff6ff;
-      color: var(--color-working);
-    }
-
-    .agent.done .status {
-      background: #ecfdf5;
-      color: var(--color-done);
-    }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #94a3b8;
-      display: inline-block;
-    }
-
-    .agent.working .dot {
-      background: var(--color-working);
-      animation: pulse 1s infinite alternate;
-    }
-
-    .agent.done .dot {
-      background: var(--color-done);
-    }
-
-    /* Micro-bars */
-    .bars {
-      height: 14px;
-      margin: 14px 0;
-      display: flex;
-      gap: 4px;
-      align-items: flex-end;
-    }
-
-    .bars i {
-      display: block;
-      width: 4px;
-      height: 3px;
-      border-radius: 3px;
-      background: #e2e8f0;
-      transition: all 0.3s;
-    }
-
-    .agent.working .bars i {
-      animation: barHeight 0.6s infinite alternate;
-      background: #93c5fd;
-    }
-
-    .agent.working .bars i:nth-child(2) { animation-delay: 0.12s; }
-    .agent.working .bars i:nth-child(3) { animation-delay: 0.24s; }
-    .agent.working .bars i:nth-child(4) { animation-delay: 0.36s; }
-
-    .agent.done .bars i {
-      background: #a7f3d0;
-      height: 8px !important;
-    }
-
-    @keyframes barHeight {
-      from { height: 3px; }
-      to { height: 14px; }
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      border-top: 1px solid #f1f5f9;
-      padding-top: 10px;
-    }
-
-    .statv {
-      font-weight: 700;
-      font-size: 14px;
-      margin-top: 1px;
-    }
-
-    /* Filters Bar */
-    .filter-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .search-input {
-      height: 40px;
-      border: 1.5px solid var(--border-color);
-      border-radius: 12px;
-      padding: 0 14px;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      width: 100%;
-      max-width: 320px;
-      outline: none;
-      transition: all 0.2s;
-    }
-
-    .search-input:focus {
-      border-color: var(--color-working);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .filter-tabs {
-      display: flex;
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-    }
-
-    .filter-tab {
-      border: none;
-      background: none;
-      height: 32px;
-      padding: 0 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .filter-tab.active {
-      background: #ffffff;
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Feed Card & Verdict List */
-    .feed {
-      margin-top: 24px;
-    }
-
-    .feed-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .feed-title h2 {
-      font-size: 18px;
-      font-weight: 800;
-      margin: 0;
-      letter-spacing: -0.3px;
-    }
-
+    /* Main Feed Cards */
     .feed-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
-      border-radius: 16px;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
       box-shadow: var(--shadow-sm);
-      overflow: hidden;
     }
 
-    .row {
+    .verdict-row {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr 0.8fr 2.5fr 1fr;
+      grid-template-columns: 180px 140px 140px 1fr 140px;
       gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
       align-items: center;
-      padding: 16px 20px;
-      border-top: 1px solid #f1f5f9;
-      transition: background 0.15s ease;
+      transition: background 0.15s;
     }
-
-    .row:first-child {
-      border-top: none;
-    }
-
-    .row:hover {
-      background: #f8fafc;
-    }
-
-    .sym {
-      font-weight: 800;
-      font-size: 15px;
-      letter-spacing: -0.2px;
-    }
-
-    .cap {
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
+    .verdict-row:hover { background: #f8fafc; }
+    .verdict-row:last-child { border-bottom: none; }
 
     .badge {
-      display: inline-flex;
-      padding: 5px 10px;
-      border-radius: 9999px;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      justify-content: center;
-      width: max-content;
-    }
-
-    .badge.buy {
-      background: #ecfdf5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-    }
-
-    .badge.watch {
-      background: #fef9c3;
-      color: #854d0e;
-      border: 1px solid #fef08a;
-    }
-
-    .badge.avoid {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-    }
-
-    .why {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.45;
-    }
-
-    .price {
-      text-align: right;
-      font-weight: 800;
-      font-size: 15px;
-    }
-
-    .change {
+      padding: 3px 8px;
+      border-radius: 6px;
       font-size: 11px;
-      margin-top: 2px;
-      font-weight: 600;
+      font-weight: 800;
+      display: inline-block;
     }
+    .badge.buy { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge.watch { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge.avoid { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-    .up { color: var(--color-buy); }
-    .down { color: var(--color-avoid); }
-
-    .empty {
-      padding: 40px;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-
-    /* Logs Section */
-    .logs-section {
-      margin-top: 32px;
-    }
-
-    .logs-card {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      padding: 16px 20px;
-      color: #e2e8f0;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      max-height: 220px;
-      overflow-y: auto;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .log-entry {
-      line-height: 1.6;
-      margin-bottom: 6px;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 4px;
-      display: flex;
+    /* Sector Heatmap */
+    .sector-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
+      margin-top: 12px;
+    }
+    .sector-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
     }
 
-    .log-entry:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-
-    .log-time {
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    .log-msg {
-      color: #38bdf8;
-      word-break: break-all;
-    }
-
-    /* Modals & Backdrop */
-    .backdrop {
+    /* Modal Backdrop */
+    .modal-backdrop {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.4);
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
       backdrop-filter: blur(4px);
       z-index: 1000;
-      display: flex;
-      justify-content: center;
+      display: none;
       align-items: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
+      justify-content: center;
+      padding: 20px;
     }
-
-    .backdrop.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
+    .modal-backdrop.open { display: flex; }
     .modal {
       background: #ffffff;
-      border-radius: 20px;
-      width: 94%;
-      max-width: 940px;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 960px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: var(--shadow-xl);
-      border: 1px solid var(--border-color);
-      transform: translateY(20px);
-      transition: transform 0.25s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .backdrop.open .modal {
-      transform: translateY(0);
+      box-shadow: var(--shadow-lg);
+      padding: 24px;
     }
 
     .modal-tabs {
       display: flex;
-      gap: 4px;
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border-color);
-    }
-
-    .modal-tab-btn {
-      flex: 1;
-      border: none;
-      background: none;
-      height: 36px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .modal-tab-btn.active {
-      background: #ffffff;
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-
-    .modal-header {
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f8fafc;
-    }
-
-    .modal-title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 8px;
-      transition: background 0.15s;
-    }
-
-    .modal-close:hover {
-      background: #e2e8f0;
-      color: var(--text-primary);
-    }
-
-    .modal-body {
-      padding: 24px;
-      overflow-y: auto;
-    }
-
-    /* Config Form Drawer */
-    .drawer-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.3);
-      backdrop-filter: blur(2px);
-      z-index: 900;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-
-    .drawer-backdrop.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .drawer {
-      position: fixed;
-      top: 0;
-      right: -460px;
-      width: 100%;
-      max-width: 460px;
-      height: 100vh;
-      background: #ffffff;
-      box-shadow: -10px 0 30px -5px rgba(15, 23, 42, 0.08);
-      border-left: 1px solid var(--border-color);
-      z-index: 950;
-      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .drawer.open {
-      right: 0;
-    }
-
-    .drawer-header {
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #f8fafc;
-    }
-
-    .drawer-body {
-      padding: 24px;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
-
-    .drawer-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      gap: 12px;
-      background: #f8fafc;
-    }
-
-    /* Form Fields */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-secondary);
-      margin-bottom: 6px;
-    }
-
-    .form-input {
-      width: 100%;
-      height: 38px;
-      border: 1.5px solid var(--border-color);
-      border-radius: 10px;
-      padding: 0 12px;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      color: var(--text-primary);
-      outline: none;
-      transition: all 0.2s;
-    }
-
-    .form-input:focus {
-      border-color: var(--color-working);
-    }
-
-    .form-textarea {
-      width: 100%;
-      height: 70px;
-      border: 1.5px solid var(--border-color);
-      border-radius: 10px;
-      padding: 8px 12px;
-      font-family: var(--font-sans);
-      font-size: 13px;
-      color: var(--text-primary);
-      outline: none;
-      resize: vertical;
-      transition: all 0.2s;
-    }
-
-    .form-textarea:focus {
-      border-color: var(--color-working);
-    }
-
-    /* Debate Details inside Modal */
-    .debate-agent-row {
-      margin-bottom: 18px;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 14px;
-    }
-
-    .debate-agent-row:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-      margin-bottom: 0;
-    }
-
-    .agent-badge-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .agent-badge-name {
-      font-weight: 700;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
       gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
     }
-
-    .agent-conviction {
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .conviction-meter-bg {
-      height: 6px;
-      background: #e2e8f0;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-
-    .conviction-meter-fill {
-      height: 100%;
-      background: var(--color-working);
-      border-radius: 3px;
-      transition: width 0.4s ease-out;
-    }
-
-    .agent-statement {
+    .modal-tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: none;
       font-size: 13px;
+      font-weight: 700;
       color: var(--text-secondary);
-      line-height: 1.4;
-      padding-left: 28px;
-      margin: 0;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .modal-tab-btn.active {
+      background: #eff6ff;
+      color: #1d4ed8;
     }
 
-    /* Footer */
-    footer {
-      padding-top: 20px;
-      margin-top: 40px;
-      border-top: 1px solid var(--border-color);
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.35; transform: scale(0.8); }
-      100% { opacity: 1; transform: scale(1.1); }
-    }
-
-    /* Responsive */
-    @media(max-width:1024px) {
-      .kpis, .agents {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media(max-width:768px) {
-      .row {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      .why {
-        grid-column: 1/-1;
-      }
-      .price {
-        text-align: left;
-      }
-      footer {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 8px;
-      }
-    }
-
-    @media(max-width:480px) {
-      .kpis, .agents {
-        grid-template-columns: 1fr;
-      }
-      .top {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
-      .controls {
-        width: 100%;
-      }
-      .btn {
-        width: 100%;
-      }
-    }
+    .change.up { color: #10b981; font-weight: 700; }
+    .change.down { color: #ef4444; font-weight: 700; }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <header class="top">
-      <div class="brand" id="brand">
-        MarketPulse <span>· Indian stock analysis · <b id="agentCount">8</b> agents on duty</span>
-      </div>
-      <div class="controls">
-        <button id="openPasteBtn" class="btn btn-secondary" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          📋 Paste NSE stocks
-        </button>
-        <button id="openConfigBtn" class="btn btn-secondary">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          Configure universe
-        </button>
-        <button id="start" class="btn">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Start agents
-        </button>
-      </div>
-    </header>
 
-    <!-- Pipeline Visual Stepper -->
-    <div class="stepper" id="stepper">
+  <header class="header">
+    <div class="header-inner">
+      <a href="#" class="brand">
+        <div class="brand-icon">M</div>
+        <span>MarketPulse AI</span>
+      </a>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="openWatchlistDrawer()">📋 Watchlist</button>
+        <button class="btn btn-secondary" onclick="openBacktestModal()">🧪 Strategy Lab</button>
+        <button class="btn btn-secondary" onclick="openPasteDrawer()">📋 Paste NSE Stocks</button>
+        <button class="btn btn-primary" id="startBtn" onclick="triggerStart()">🚀 Start Agents</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Market Regime Bar -->
+    <section class="regime-bar" id="regimeBar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:13px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Broad Market Regime:</span>
+        <span class="regime-badge regime-RISK_ON" id="regimeBadge">RISK_ON (82/100)</span>
+      </div>
+      <div style="display:flex; gap:16px; font-size:12px; font-weight:700;">
+        <span>NIFTY 50: <b id="niftyPrice">₹24,520.00</b> (<span class="change up" id="niftyChg">+0.45%</span>)</span>
+        <span>India VIX: <b id="vixVal">14.20</b></span>
+        <span>Trend: <b id="regimeTrend">BULLISH</b></span>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Universe</div>
+        <div class="kpi-value" id="kpiUniverse">0</div>
+        <div class="kpi-sub">NSE Stocks Scanned</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Shortlisted</div>
+        <div class="kpi-value" id="kpiShortlisted">0</div>
+        <div class="kpi-sub">In AI Debate</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">BOOM Momentum</div>
+        <div class="kpi-value" id="kpiBoom">0</div>
+        <div class="kpi-sub">Volume / Price Surge</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">BUY Signals</div>
+        <div class="kpi-value" id="kpiBuys" style="color:var(--color-buy);">0</div>
+        <div class="kpi-sub">Validated Setups</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Top Setup</div>
+        <div class="kpi-value" id="kpiTop">—</div>
+        <div class="kpi-sub" id="kpiTopSub">Highest Rank</div>
+      </div>
+    </section>
+
+    <!-- Pipeline Stepper -->
+    <section class="pipeline">
       <div class="step-item" id="step-scout"><span class="step-dot">1</span>Scout</div>
-      <div class="step-connector" id="conn-scout"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-technician"><span class="step-dot">2</span>Technician</div>
-      <div class="step-connector" id="conn-technician"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-fundamentalist"><span class="step-dot">3</span>Fundamentalist</div>
-      <div class="step-connector" id="conn-fundamentalist"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-newsdesk"><span class="step-dot">4</span>Newsdesk</div>
-      <div class="step-connector" id="conn-newsdesk"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-debate"><span class="step-dot">5</span>Debate</div>
-      <div class="step-connector" id="conn-debate"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-judge"><span class="step-dot">6</span>Judge</div>
-      <div class="step-connector" id="conn-judge"></div>
+      <div class="step-line"></div>
       <div class="step-item" id="step-messenger"><span class="step-dot">7</span>Messenger</div>
+    </section>
+
+    <!-- Live Booming Showcase Banner -->
+    <div id="boomingSection" style="display:none; margin-bottom:24px;"></div>
+
+    <!-- Sector Heatmap Section -->
+    <div class="feed-card" style="margin-bottom:24px;">
+      <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">
+        🗺️ NSE Sector Relative Strength Heatmap
+      </h3>
+      <div class="sector-grid" id="sectorGrid">
+        <div style="color:var(--text-muted); font-size:12px;">Loading sector heatmap data...</div>
+      </div>
     </div>
 
-    <section class="kpis">
-      <div class="card kpi">
-        <div class="label">Universe</div>
-        <div class="big" id="universe">0</div>
-        <div class="sub">stocks scanned</div>
+    <!-- Verdicts Feed -->
+    <div class="feed-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:16px; font-weight:800;">Latest Stock Verdicts & Signal Validation</h3>
+        <span style="font-size:12px; color:var(--text-muted);" id="runMeta">Idle</span>
       </div>
-      <div class="card kpi">
-        <div class="label">In debate</div>
-        <div class="big" id="debate">0</div>
-        <div class="sub">shortlisted</div>
-      </div>
-      <div class="card kpi">
-        <div class="label">Buy signals</div>
-        <div class="big" id="buys">0</div>
-        <div class="sub">threshold-qualified</div>
-      </div>
-      <div class="card kpi">
-        <div class="label">Top pick</div>
-        <div class="big" id="top">—</div>
-        <div class="sub" id="topSub">confidence —</div>
-      </div>
-    </section>
-
-    <section class="agents" id="agents"></section>
-
-    <section class="feed">
-      <div class="feed-title">
-        <h2>Latest verdicts</h2>
-        <div class="hint" id="runMeta">Idle · live engine config</div>
-      </div>
-
-      <!-- Live Booming Stocks Category Showcase -->
-      <div id="boomingSection" style="display:none;"></div>
-      
-      <!-- Interactive filters bar -->
-      <div class="filter-bar">
-
-        <input type="text" id="searchBar" class="search-input" placeholder="Search symbol, name, or strategy...">
-        <div class="filter-group">
-          <select id="capFilter" class="select" style="height:40px; font-size:12px;">
-            <option value="all">All Caps</option>
-            <option value="large">Large Cap</option>
-            <option value="mid">Mid Cap</option>
-            <option value="small">Small Cap</option>
-          </select>
-          <div class="filter-tabs">
-            <button class="filter-tab active" data-verdict="all">All</button>
-            <button class="filter-tab" data-verdict="buy">BUY</button>
-            <button class="filter-tab" data-verdict="strong">🚀 Strong Buy</button>
-            <button class="filter-tab" data-verdict="boom">🔥 BOOM</button>
-            <button class="filter-tab" data-verdict="breakout">📈 52W High</button>
-            <button class="filter-tab" data-verdict="avoid">AVOID</button>
-          </div>
+      <div id="feed">
+        <div style="text-align:center; padding:40px; color:var(--text-muted); font-size:13px;">
+          Press "🚀 Start Agents" to run live NSE stock analysis pipeline.
         </div>
       </div>
+    </div>
 
-
-      <div class="feed-card" id="feed">
-        <div class="empty">Press “Start agents” to run the panel.</div>
-      </div>
-    </section>
-
-    <section class="logs-section">
-      <div class="feed-title">
-        <h2>Audit Trail</h2>
-      </div>
-      <div class="logs-card" id="logs">
-        <div style="color:var(--text-muted);text-align:center;padding:20px;">Logs will appear here once agents are triggered...</div>
-      </div>
-    </section>
-
-    <footer>
-      <div id="footerLeft">Built from 0 real stocks · data pulled — IST</div>
-      <div id="footerRight">engine: —</div>
-    </footer>
   </main>
 
-  <!-- Interactive Configuration Drawer -->
-  <div class="drawer-backdrop" id="drawerBackdrop">
-    <div class="drawer" id="drawer">
-      <div class="drawer-header">
-        <h3 style="margin:0; font-size:16px; font-weight:800;">Panel & Universe Settings</h3>
-        <button class="modal-close" id="closeDrawerBtn">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="drawer-body">
-        <h4 style="margin:0 0 16px 0; font-size:13px; color:var(--color-working); text-transform:uppercase; letter-spacing:0.04em;">Configuration Variables</h4>
-        <div class="form-group">
-          <label class="form-label" for="configBrand">Brand Name</label>
-          <input type="text" id="configBrand" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configLlmProvider">LLM Provider</label>
-          <select id="configLlmProvider" class="form-input" style="height:38px; padding:0 8px;">
-            <option value="auto">Auto-detect (Preferred)</option>
-            <option value="claude_code">Claude Code CLI</option>
-            <option value="anthropic">Anthropic API Key</option>
-            <option value="openai">OpenAI API Key</option>
-            <option value="deterministic">Deterministic Fallback Only</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configThreshold">Confidence Threshold (BUY Trigger)</label>
-          <input type="number" min="1" max="10" id="configThreshold" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configDelay">Visual Pacing Delay (Seconds)</label>
-          <input type="number" step="0.05" min="0" id="configDelay" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configShortlist">Shortlist Per Bucket</label>
-          <input type="number" min="1" id="configShortlist" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configTelegramToken">Telegram Bot Token</label>
-          <input type="password" id="configTelegramToken" class="form-input" placeholder="Token from @BotFather">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configTelegramChatId">Telegram Chat ID</label>
-          <input type="text" id="configTelegramChatId" class="form-input" placeholder="Chat ID from @userinfobot">
-        </div>
-
-        <h4 style="margin:24px 0 16px 0; font-size:13px; color:var(--color-working); text-transform:uppercase; letter-spacing:0.04em;">Stock Universe Tickers</h4>
-        <div style="margin-bottom: 12px; display: flex; gap: 8px;">
-          <button type="button" class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11px; flex: 1; justify-content: center;" onclick="window.loadRecommendedUniverse()">
-            Load Recommended Picks
-          </button>
-          <button type="button" class="btn btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11px; flex: 1; justify-content: center;" onclick="window.clearUniverseInput()">
-            Clear All
-          </button>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="configUniverse">Tickers list (comma-separated, no need to add '.NS')</label>
-          <textarea id="configUniverse" class="form-textarea" style="height: 120px;" placeholder="e.g. RELIANCE, TCS, TATAMOTORS, CDSL, TRENT, POLYCAB"></textarea>
-        </div>
-      </div>
-      <div class="drawer-footer">
-        <button class="btn btn-secondary" style="flex:1;" id="cancelDrawerBtn">Cancel</button>
-        <button class="btn" style="flex:1.5;" id="saveConfigBtn">Save Configuration</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Interactive Paste & Analyze NSE Stocks Drawer -->
-  <div class="drawer-backdrop" id="pasteBackdrop">
-    <div class="drawer" id="pasteDrawer">
-      <div class="drawer-header">
-        <h3 style="margin:0; font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
-          📋 Paste & Analyze NSE Stocks
-        </h3>
-        <button class="modal-close" id="closePasteDrawerBtn">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-      <div class="drawer-body">
-        <div style="background:#eff6ff; border:1px solid #dbeafe; border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:#1e40af; line-height:1.45;">
-          <b>💡 How to copy-paste from NSE website:</b><br>
-          Paste any raw text, table data, or watchlist URLs copied directly from <b>NSE India</b>. Our parser automatically extracts clean NSE tickers.
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="pasteInputText">Paste Copied NSE Text, URLs, or Tickers</label>
-          <textarea id="pasteInputText" class="form-textarea" style="height: 160px; font-family: var(--font-mono); font-size: 12px;" placeholder="Paste text copied from NSE website tables, search, or watchlist...&#10;e.g. RELIANCE, TCS, https://www.nseindia.com/get-quotes/equity?symbol=TATAMOTORS, INFY.NS, SBIN"></textarea>
-        </div>
-
-        <div id="parsedPreviewSection" style="margin-top:12px; display:none;">
-          <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; display:flex; justify-content:space-between;">
-            <span>Recognized Tickers</span>
-            <span id="parsedCountBadge" style="color:var(--color-working); font-weight:800;">0 stocks found</span>
-          </div>
-          <div id="parsedBadgesContainer" style="display:flex; flex-wrap:wrap; gap:6px; max-height:100px; overflow-y:auto; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; padding:8px;"></div>
-        </div>
-      </div>
-      <div class="drawer-footer" style="flex-direction:column; gap:8px;">
-        <button class="btn" style="width:100%; justify-content:center;" id="runPastedBtn">
-          🚀 Run Agent Analysis on Pasted Stocks
-        </button>
-        <div style="display:flex; gap:8px; width:100%;">
-          <button class="btn btn-secondary" style="flex:1; justify-content:center;" id="savePastedUniverseBtn">Save to Universe</button>
-          <button class="btn btn-secondary" style="flex:1; justify-content:center;" id="cancelPasteBtn">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Interactive Debate Breakdown Modal -->
-  <div class="backdrop" id="modalBackdrop">
+  <!-- Stock Detail Modal -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target === this) closeModal();">
     <div class="modal">
-      <div class="modal-header">
-        <div class="modal-title" id="modalTitle">RELIANCE <span class="badge buy" id="modalVerdict">BUY</span></div>
-        <button class="modal-close" id="closeModalBtn">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div id="modalTitle" style="width:100%;"></div>
+        <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:var(--text-muted);">✕</button>
       </div>
-      <div class="modal-body" id="modalBody">
-        <!-- Inside populated by JS dynamically -->
-      </div>
+      <div id="modalBody"></div>
     </div>
   </div>
 
   <script>
-    const agentIcons = {
-      scout: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>`,
-      technician: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`,
-      fundamentalist: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
-      newsdesk: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>`,
-      bull: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>`,
-      bear: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"/></svg>`,
-      judge: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>`,
-      messenger: `<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>`
-    };
-
-    let cfg = {};
     let localVerdicts = [];
-    let activeFilters = {
-      search: '',
-      verdict: 'all',
-      cap: 'all'
-    };
 
-    // Security HTML escaping
-    function escapeHtml(str) {
-      if (typeof str !== 'string') return str === null || str === undefined ? '' : String(str);
-      return str.replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-    }
-
-    // Smooth toast notification system
-    function showToast(msg, type = 'info') {
-      const toast = document.createElement('div');
-      toast.style.position = 'fixed';
-      toast.style.bottom = '24px';
-      toast.style.right = '24px';
-      toast.style.padding = '12px 20px';
-      toast.style.background = type === 'success' ? '#ecfdf5' : type === 'error' ? '#fee2e2' : '#eff6ff';
-      toast.style.color = type === 'success' ? '#065f46' : type === 'error' ? '#991b1b' : '#1d4ed8';
-      toast.style.border = `1px solid ${type === 'success' ? '#a7f3d0' : type === 'error' ? '#fca5a5' : '#dbeafe'}`;
-      toast.style.borderRadius = '12px';
-      toast.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
-      toast.style.fontFamily = 'var(--font-sans)';
-      toast.style.fontSize = '13px';
-      toast.style.fontWeight = '700';
-      toast.style.zIndex = '2000';
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
-      toast.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-      toast.textContent = msg;
-      
-      document.body.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-      }, 50);
-      
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
-    }
-
-    // Copy signal details to clipboard
-    window.copySignalToClipboard = function(symbol, verdict, confidence, why, catalyst, buyZone, target, stopLoss) {
-      const text = `🟢 BUY SIGNAL — ${symbol}\n` +
-                   `Verdict: ${verdict} | Confidence: ${confidence}/10\n\n` +
-                   `🎯 Trade Setup Guide:\n` +
-                   `• Buy Zone: ${buyZone || '—'}\n` +
-                   `• Target Price: ${target || '—'}\n` +
-                   `• Stop Loss: ${stopLoss || '—'}\n\n` +
-                   `Why: ${why}\n` +
-                   `Catalyst: ${catalyst}\n\n` +
-                   `— MarketPulse Analysis`;
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Trade setup copied to clipboard!', 'success');
-      }).catch(err => {
-        showToast('Failed to copy to clipboard', 'error');
-      });
-    };
-
-    // Quick copy helper functions
-    window.copySymbol = function(sym) {
-      navigator.clipboard.writeText(sym).then(() => showToast(`Copied symbol '${sym}'!`, 'success')).catch(() => showToast('Failed to copy', 'error'));
-    };
-
-    window.copyNseLink = function(sym) {
-      const url = `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(sym)}`;
-      navigator.clipboard.writeText(url).then(() => showToast(`Copied NSE link for '${sym}'!`, 'success')).catch(() => showToast('Failed to copy', 'error'));
-    };
-
-    // Paste NSE stocks drawer logic
-    let parsedPastedSymbols = [];
-
-    function openPasteDrawer() {
-      document.getElementById('pasteBackdrop').classList.add('open');
-      document.getElementById('pasteDrawer').classList.add('open');
-    }
-
-    function closePasteDrawer() {
-      document.getElementById('pasteBackdrop').classList.remove('open');
-      document.getElementById('pasteDrawer').classList.remove('open');
-    }
-
-    document.getElementById('openPasteBtn').onclick = openPasteDrawer;
-    document.getElementById('closePasteDrawerBtn').onclick = closePasteDrawer;
-    document.getElementById('cancelPasteBtn').onclick = closePasteDrawer;
-    document.getElementById('pasteBackdrop').onclick = (e) => {
-      if (e.target.id === 'pasteBackdrop') closePasteDrawer();
-    };
-
-    document.getElementById('pasteInputText').oninput = async (e) => {
-      const text = e.target.value;
-      if (!text.trim()) {
-        document.getElementById('parsedPreviewSection').style.display = 'none';
-        parsedPastedSymbols = [];
-        return;
-      }
+    async function pollStatus() {
       try {
-        const res = await fetch('/api/parse-pasted-stocks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        }).then(r => r.json());
-        if (res.ok && res.symbols) {
-          parsedPastedSymbols = res.symbols;
-          document.getElementById('parsedCountBadge').textContent = `${res.count} stock(s) recognized`;
-          document.getElementById('parsedBadgesContainer').innerHTML = res.symbols.map(s => `<span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:11px;">${escapeHtml(s)}</span>`).join('');
-          document.getElementById('parsedPreviewSection').style.display = 'block';
+        const res = await fetch('/status');
+        const s = await res.json();
+        render(s);
+      } catch(e) {
+        console.error("Status poll error", e);
+      }
+    }
+
+    async function fetchSectors() {
+      try {
+        const res = await fetch('/sectors');
+        const d = await res.json();
+        if (d.ok && d.sectors) {
+          renderSectors(d.sectors);
         }
-      } catch (err) {
-        console.error("Failed to parse pasted text", err);
+      } catch(e) {}
+    }
+
+    function renderSectors(sectors) {
+      document.getElementById('sectorGrid').innerHTML = sectors.map(sec => `
+        <div class="sector-card">
+          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:12px;">
+            <span>${sec.name}</span>
+            <span class="${sec.return_20d >= 0 ? 'up' : 'down'}">${sec.return_20d >= 0 ? '+' : ''}${sec.return_20d}%</span>
+          </div>
+          <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">20D Rank: #${sec.momentum_rank}</div>
+        </div>
+      `).join('');
+    }
+
+    function render(s) {
+      document.getElementById('kpiUniverse').textContent = s.kpis.universe || 0;
+      document.getElementById('kpiShortlisted').textContent = s.kpis.shortlisted || 0;
+      document.getElementById('kpiBoom').textContent = (s.verdicts || []).filter(v => (v.boom_score || 0) >= 70).length;
+      document.getElementById('kpiBuys').textContent = s.kpis.buy_signals || 0;
+      document.getElementById('kpiTop').textContent = s.kpis.top_pick?.symbol || '—';
+
+      // Market Regime
+      if (s.market_regime) {
+        const r = s.market_regime;
+        document.getElementById('regimeBadge').textContent = `${r.risk_mode} (${r.score}/100)`;
+        document.getElementById('regimeBadge').className = `regime-badge regime-${r.risk_mode}`;
+        document.getElementById('niftyPrice').textContent = `₹${r.nifty_price?.toLocaleString('en-IN') || '24,500.00'}`;
+        document.getElementById('niftyChg').textContent = `${r.nifty_day_change_pct >= 0 ? '+' : ''}${r.nifty_day_change_pct}%`;
+        document.getElementById('vixVal').textContent = r.vix || '14.20';
+        document.getElementById('regimeTrend').textContent = r.trend || 'BULLISH';
       }
-    };
 
-    document.getElementById('savePastedUniverseBtn').onclick = async () => {
-      if (!parsedPastedSymbols.length) {
-        showToast('Please paste valid NSE stocks first!', 'error');
-        return;
-      }
-      document.getElementById('configUniverse').value = parsedPastedSymbols.join(', ');
-      showToast(`Updated universe with ${parsedPastedSymbols.length} stocks!`, 'success');
-      closePasteDrawer();
-      openDrawer();
-    };
-
-    document.getElementById('runPastedBtn').onclick = async () => {
-      if (!parsedPastedSymbols.length) {
-        showToast('Please paste valid NSE stocks first!', 'error');
-        return;
-      }
-      const runBtn = document.getElementById('runPastedBtn');
-      runBtn.disabled = true;
-      runBtn.textContent = 'Updating Universe & Triggering Agents...';
-      try {
-        await fetch('/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ universe: parsedPastedSymbols })
-        });
-        await fetch('/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-        showToast(`Started agents on ${parsedPastedSymbols.length} pasted stocks!`, 'success');
-        closePasteDrawer();
-      } catch (err) {
-        showToast('Failed to trigger run on pasted stocks', 'error');
-      } finally {
-        runBtn.disabled = false;
-        runBtn.textContent = '🚀 Run Agent Analysis on Pasted Stocks';
-      }
-    };
-
-    window.loadRecommendedUniverse = function() {
-
-      const recommended = ['RELIANCE', 'TCS', 'HDFCBANK', 'ICICIBANK', 'INFY', 'TATAMOTORS', 'TRENT', 'CDSL', 'BSE', 'POLYCAB', 'VOLTAS', 'KAYNES', 'CLEAN', 'BEL'];
-      document.getElementById('configUniverse').value = recommended.join(', ');
-      showToast('Loaded recommended tickers!', 'success');
-    };
-
-    window.clearUniverseInput = function() {
-      document.getElementById('configUniverse').value = '';
-      showToast('Cleared tickers input', 'info');
-    };
-
-    // Load configs from API
-    async function load() {
-      try {
-        cfg = await fetch('/config').then(r => r.json());
-        document.getElementById('brand').innerHTML = `${cfg.brand} <span>· Indian stock analysis · <b>8</b> agents on duty</span>`;
-        
-        // Populating drawer form fields
-        document.getElementById('configBrand').value = cfg.brand || '';
-        document.getElementById('configLlmProvider').value = cfg.llm_provider || 'auto';
-        document.getElementById('configThreshold').value = cfg.confidence_threshold || 7;
-        document.getElementById('configDelay').value = cfg.agent_delay || 0.35;
-        document.getElementById('configShortlist').value = cfg.shortlist_per_bucket || 4;
-        document.getElementById('configTelegramToken').value = cfg.telegram_bot_token || '';
-        document.getElementById('configTelegramChatId').value = cfg.telegram_chat_id || '';
-        
-        if (cfg.universe) {
-          let flat = [];
-          if (Array.isArray(cfg.universe)) {
-            flat = cfg.universe;
-          } else {
-            flat = [
-              ...(cfg.universe.large || []),
-              ...(cfg.universe.mid || []),
-              ...(cfg.universe.small || [])
-            ];
-          }
-          document.getElementById('configUniverse').value = flat.map(s => s.replace(/\.NS$/i, '')).join(', ');
-        }
-      } catch (e) {
-        console.error("Failed to load configuration", e);
+      // Feed
+      localVerdicts = s.verdicts || [];
+      const feedEl = document.getElementById('feed');
+      if (localVerdicts.length > 0) {
+        feedEl.innerHTML = localVerdicts.slice().reverse().map(v => `
+          <div class="verdict-row" onclick="openDebateModal('${v.symbol}')" style="cursor:pointer;">
+            <div>
+              <span style="font-weight:800; font-size:15px;">${v.symbol}</span>
+              <div style="font-size:11px; color:var(--text-muted);">${v.cap_segment} cap</div>
+            </div>
+            <div>
+              <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
+              <div style="font-size:10px; font-weight:700; color:var(--text-secondary); margin-top:2px;">
+                ${v.validated ? '✓ Validated' : '⚠ Blocked'}
+              </div>
+            </div>
+            <div>
+              <div style="font-weight:800; font-size:13px;">Score: ${v.marketpulse_score}/100</div>
+              <div style="font-size:11px; color:#c2410c; font-weight:700;">BOOM: ${v.boom_score}/100</div>
+            </div>
+            <div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.3;">${v.why || '—'}</div>
+              ${v.buy_zone ? `<div style="font-size:11px; font-weight:700; color:#047857; margin-top:4px;">Buy Zone: ${v.buy_zone} | Target: ${v.target} | SL: ${v.stop_loss}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:800; font-size:14px;">₹${v.price ?? '—'}</div>
+              <div class="${v.day_change_pct >= 0 ? 'up' : 'down'}" style="font-size:11px;">
+                ${v.day_change_pct == null ? '' : (v.day_change_pct > 0 ? '+' : '') + v.day_change_pct + '%'}
+              </div>
+            </div>
+          </div>
+        `).join('');
       }
     }
 
-    // Modal drawer actions
-    function openDrawer() {
-      document.getElementById('drawerBackdrop').classList.add('open');
-      document.getElementById('drawer').classList.add('open');
-    }
-
-    function closeDrawer() {
-      document.getElementById('drawerBackdrop').classList.remove('open');
-      document.getElementById('drawer').classList.remove('open');
-    }
-
-    document.getElementById('openConfigBtn').onclick = openDrawer;
-    document.getElementById('closeDrawerBtn').onclick = closeDrawer;
-    document.getElementById('cancelDrawerBtn').onclick = closeDrawer;
-    document.getElementById('drawerBackdrop').onclick = (e) => {
-      if (e.target.id === 'drawerBackdrop') closeDrawer();
-    };
-
-    // Save configuration
-    document.getElementById('saveConfigBtn').onclick = async () => {
-      const saveBtn = document.getElementById('saveConfigBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
-      
-      const tickers = document.getElementById('configUniverse').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-      
-      const payload = {
-        brand: document.getElementById('configBrand').value,
-        llm_provider: document.getElementById('configLlmProvider').value,
-        confidence_threshold: parseInt(document.getElementById('configThreshold').value, 10),
-        agent_delay: parseFloat(document.getElementById('configDelay').value),
-        shortlist_per_bucket: parseInt(document.getElementById('configShortlist').value, 10),
-        telegram_bot_token: document.getElementById('configTelegramToken').value,
-        telegram_chat_id: document.getElementById('configTelegramChatId').value,
-        universe: tickers
-      };
-      
-      try {
-        const res = await fetch('/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(r => r.json());
-        
-        if (res.ok) {
-          showToast('Settings saved & hot-reloaded successfully!', 'success');
-          closeDrawer();
-          await load();
-        } else {
-          showToast('Error: ' + res.error, 'error');
-        }
-      } catch (e) {
-        showToast('Server connection failed: ' + e, 'error');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Configuration';
-      }
-    };
-
-    // Debate details modal actions
     function openDebateModal(symbol) {
       const v = localVerdicts.find(x => x.symbol === symbol);
       if (!v) return;
 
-      const escSym = escapeHtml(v.symbol);
-      const escName = escapeHtml(v.name);
-      const escVerdict = escapeHtml(v.verdict);
-      const escWhy = escapeHtml(v.why || '');
-      const escCat = escapeHtml(v.catalyst || '');
-      const escBz = escapeHtml(v.buy_zone || '');
-      const escTgt = escapeHtml(v.target || '');
-      const escSl = escapeHtml(v.stop_loss || '');
-
       document.getElementById('modalTitle').innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;">
-          <span style="font-size:20px; font-weight:800;">${escSym}</span>
-          <span style="font-size:13px; font-weight:normal; color:var(--text-secondary);">(${escName})</span>
-          <span style="font-size:15px; font-weight:800; color:var(--text-primary); margin-left:8px;">₹${v.price ?? '—'}</span>
-          <span class="change ${v.day_change_pct >= 0 ? 'up' : 'down'}" style="font-size:12px; font-weight:700;">
-            ${v.day_change_pct == null ? '—' : (v.day_change_pct > 0 ? '+' : '') + v.day_change_pct + '%'}
-          </span>
-          <span class="badge ${v.verdict.toLowerCase()}" style="margin-left:auto;">${escVerdict}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px; font-weight:800;">${v.symbol}</span>
+          <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
+          <span style="font-size:13px; color:var(--text-muted);">MarketPulse Score: ${v.marketpulse_score}/100</span>
         </div>
       `;
 
-      // Technical Indicators & Range Data
-      const tech = v.technicals || {};
-      const r52 = v.range_52w || {};
-      const rvol = tech.rvol || 1.0;
-      const pos52 = r52.position_pct != null ? r52.position_pct : 50;
-      const smaPct = tech.price_vs_sma_pct;
-      const trendStr = tech.trend || 'sideways';
-
-      let rvolColor = '#3b82f6';
-      let rvolText = 'Normal Volume';
-      if (rvol >= 2.0) { rvolColor = '#10b981'; rvolText = '🔥 Heavy Volume Surge (>2.0x)'; }
-      else if (rvol >= 1.3) { rvolColor = '#059669'; rvolText = '⚡ Above Average Volume'; }
-      else if (rvol < 0.9) { rvolColor = '#f59e0b'; rvolText = '⚠️ Below Average Volume'; }
-
-      let chartPanelHtml = `
-        <!-- Embedded Live TradingView Interactive Chart Container -->
+      document.getElementById('modalBody').innerHTML = `
         <div style="margin-bottom:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
-              📈 Live Candlestick & Technical Analysis Chart
-            </div>
-            <div style="display:flex; gap:6px;">
-              <a href="https://www.nseindia.com/get-quotes/equity?symbol=${escSym}" target="_blank" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">🏛️ Open on NSE India</a>
-              <a href="https://www.tradingview.com/chart/?symbol=NSE:${escSym}" target="_blank" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">📈 Open Full Window</a>
-            </div>
-          </div>
-          <div id="tv_chart_container" style="height:420px; width:100%; border-radius:16px; overflow:hidden; border:1px solid var(--border-color); background:#f8fafc; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-muted);">
-            Loading TradingView Chart Widget...
-          </div>
+          <div id="tv_chart_container" style="height:400px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
         </div>
-
-        <!-- In-Project Technical Chart Analysis Grid -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
-          
-          <!-- 52-Week Range Gauge -->
-          <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:14px; padding:14px;">
-            <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px; display:flex; justify-content:space-between;">
-              <span>52-Week Price Range</span>
-              <span style="color:var(--color-working);">${pos52}% of High</span>
-            </div>
-            <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-bottom:8px; position:relative;">
-              <div style="height:100%; width:${Math.min(100, Math.max(0, pos52))}%; background:linear-gradient(90deg, #3b82f6 0%, #10b981 100%); border-radius:4px;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:600; color:var(--text-muted);">
-              <span>52W Low: ₹${r52.low ?? '—'}</span>
-              <span>Live: ₹${v.price ?? '—'}</span>
-              <span>52W High: ₹${r52.high ?? '—'}</span>
-            </div>
-          </div>
-
-          <!-- Relative Volume (RVOL) Strength Bar -->
-          <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:14px; padding:14px;">
-            <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px; display:flex; justify-content:space-between;">
-              <span>Volume Activity (RVOL)</span>
-              <span style="color:${rvolColor}; font-weight:800;">${rvol}x</span>
-            </div>
-            <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; margin-bottom:8px;">
-              <div style="height:100%; width:${Math.min(100, (rvol / 3.0) * 100)}%; background:${rvolColor}; border-radius:4px;"></div>
-            </div>
-            <div style="font-size:11px; font-weight:700; color:${rvolColor}; text-align:right;">
-              ${rvolText}
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Technical Indicators & Level Cards -->
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:20px;">
-          <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:10px; text-align:center;">
-            <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Trend</div>
-            <div style="font-size:13px; font-weight:800; color:${trendStr === 'up' ? '#10b981' : trendStr === 'down' ? '#ef4444' : '#f59e0b'}; margin-top:2px; text-transform:uppercase;">${trendStr}</div>
-          </div>
-          <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:10px; text-align:center;">
-            <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">20-SMA Dist</div>
-            <div style="font-size:13px; font-weight:800; color:${(smaPct || 0) >= 0 ? '#10b981' : '#ef4444'}; margin-top:2px;">${smaPct != null ? (smaPct > 0 ? '+' : '') + smaPct + '%' : '—'}</div>
-          </div>
-          <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:10px; text-align:center;">
-            <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Swing High</div>
-            <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-top:2px;">₹${tech.swing_high ?? '—'}</div>
-          </div>
-          <div style="background:#ffffff; border:1px solid var(--border-color); border-radius:12px; padding:10px; text-align:center;">
-            <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Swing Low</div>
-            <div style="font-size:13px; font-weight:800; color:var(--text-primary); margin-top:2px;">₹${tech.swing_low ?? '—'}</div>
-          </div>
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:16px;">
+          <h4 style="margin:0 0 8px 0; font-size:14px;">Judge Final Verdict</h4>
+          <p style="font-size:13px; color:var(--text-secondary); margin:0 0 8px 0;">${v.why || ''}</p>
+          <div style="font-size:12px; font-weight:700; color:#047857;">Buy Zone: ${v.buy_zone || '—'} | Target 1: ${v.target || '—'} | Target 2: ${v.target_2 || '—'} | Stop Loss: ${v.stop_loss || '—'}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Analysis only. No trade was placed. Not investment advice.</div>
         </div>
       `;
 
-      // Judge verdict and trade setup
-      let judgeHtml = `
-        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-bottom:20px; position:relative;">
-          <h4 style="margin:0 0 8px 0; font-size:14px; display:flex; align-items:center; gap:8px; color:var(--text-primary);">
-            ${agentIcons.judge}
-            Judge Final Verdict: <span class="badge ${v.verdict.toLowerCase()}" style="margin-left:4px;">${v.verdict}</span>
-          </h4>
-          <p style="font-size:13px; font-weight:500; margin:0 0 10px 0; line-height:1.45; color:var(--text-secondary);">${escapeHtml(v.why || 'No explanation provided.')}</p>
-          ${v.catalyst && v.catalyst !== 'data unavailable' ? `
-            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Top Catalyst Reason</div>
-            <div style="font-size:13px; color:#4f46e5; font-weight:600; margin-bottom:12px;">${escapeHtml(v.catalyst)}</div>
-          ` : ''}
-          ${v.buy_zone || v.target || v.stop_loss ? `
-            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Trade Setup Guide</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:12px;">
-              <div style="background:#eaf8f0; border:1px solid #a7f3d0; border-radius:10px; padding:8px 12px; text-align:center;">
-                <div style="font-size:10px; color:#065f46; font-weight:800; text-transform:uppercase;">Buy Zone</div>
-                <div style="font-size:13px; font-weight:700; color:#065f46; margin-top:2px;">${escapeHtml(v.buy_zone || '—')}</div>
-              </div>
-              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:8px 12px; text-align:center;">
-                <div style="font-size:10px; color:#854d0e; font-weight:800; text-transform:uppercase;">Target Price</div>
-                <div style="font-size:13px; font-weight:700; color:#854d0e; margin-top:2px;">${escapeHtml(v.target || '—')}</div>
-              </div>
-              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:8px 12px; text-align:center;">
-                <div style="font-size:10px; color:#991b1b; font-weight:800; text-transform:uppercase;">Stop Loss</div>
-                <div style="font-size:13px; font-weight:700; color:#991b1b; margin-top:2px;">${escapeHtml(v.stop_loss || '—')}</div>
-              </div>
-            </div>
-            <button class="btn btn-secondary" style="height:32px; font-size:11px; padding:0 12px; margin-bottom:14px; width:100%; justify-content:center;" onclick="window.copySignalToClipboard('${escSym}', '${escVerdict}', ${v.confidence}, '${escWhy.replace(/'/g, "\\'")}', '${escCat.replace(/'/g, "\\'")}', '${escBz}', '${escTgt}', '${escSl}')">
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
-              Copy Trade Signal Alert
-            </button>
-          ` : ''}
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); font-size:11px; color:var(--text-muted);">
-            <div>Winner Conviction: <b>${v.winner}</b> | Confidence: <b>${v.confidence}/10</b></div>
-            <div>Verifier: <b>${v.verifier_ok ? '<span style="color:var(--color-done)">✓ Grounded</span>' : '<span style="color:var(--color-watch)">⚠ Fallback</span>'}</b></div>
-          </div>
-        </div>
-      `;
-
-      // Agent debates html
-      let agentsHtml = '';
-      const order = [
-        { key: 'bull', name: 'Bull Agent', color: 'var(--color-buy)', icon: agentIcons.bull },
-        { key: 'bear', name: 'Bear Agent', color: 'var(--color-avoid)', icon: agentIcons.bear },
-        { key: 'technician', name: 'Technician', color: '#10b981', icon: agentIcons.technician },
-        { key: 'fundamentalist', name: 'Fundamentalist', color: '#8b5cf6', icon: agentIcons.fundamentalist },
-        { key: 'newsdesk', name: 'Newsdesk', color: '#f59e0b', icon: agentIcons.newsdesk }
-      ];
-
-      if (v.scores && Object.keys(v.scores).length) {
-        order.forEach(agent => {
-          const scoreData = v.scores[agent.key] || {};
-          const score = scoreData.score || 0;
-          const points = scoreData.reasons || ['data unavailable'];
-          
-          agentsHtml += `
-            <div class="debate-agent-row">
-              <div class="agent-badge-header">
-                <div class="agent-badge-name" style="color: ${agent.color}">
-                  ${agent.icon}
-                  ${agent.name}
-                </div>
-                <div class="agent-conviction" style="color: ${agent.color}">Conviction: ${score}%</div>
-              </div>
-              <div class="conviction-meter-bg">
-                <div class="conviction-meter-fill" style="width: 0%; background: ${agent.color}" data-target-width="${score}%"></div>
-              </div>
-              <p class="agent-statement">${points.map(p => escapeHtml(p)).join('<br>• ')}</p>
-            </div>
-          `;
-        });
-      } else {
-        agentsHtml = `<div style="text-align:center; padding:20px; color:var(--text-muted);">Debate detail data unavailable for this verdict.</div>`;
-      }
-
-      // News headlines html
-      let newsHtml = '';
-      if (v.news && v.news.recent && v.news.recent.length) {
-        newsHtml = `
-          <div style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto; padding-right:4px;">
-            ${v.news.recent.map(item => `
-              <div style="padding:10px 14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:10px; font-size:13px;">
-                <div style="font-weight:600; color:var(--text-primary); line-height:1.4;">${escapeHtml(item.title)}</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
-                  <span>Publisher: ${escapeHtml(item.publisher || 'Unknown')}</span>
-                  <span>${item.published ? new Date(item.published * 1000).toLocaleDateString('en-IN') : ''}</span>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      } else {
-        newsHtml = `<div style="text-align:center; padding:20px; color:var(--text-muted);">No recent news headlines available for this stock.</div>`;
-      }
-
-      // Tab switcher bar
-      const tabsHtml = `
-        <div class="modal-tabs">
-          <button class="modal-tab-btn active" id="modalTabChartBtn" onclick="window.switchModalTab('chart', '${escSym}')">
-            📊 Technical Chart & Analysis
-          </button>
-          <button class="modal-tab-btn" id="modalTabDebateBtn" onclick="window.switchModalTab('debate', '${escSym}')">
-            ⚖️ AI Agent Debates
-          </button>
-          <button class="modal-tab-btn" id="modalTabNewsBtn" onclick="window.switchModalTab('news', '${escSym}')">
-            📰 News Headlines
-          </button>
-        </div>
-
-        <div id="modalTabChartContent" class="modal-tab-content">
-          ${chartPanelHtml}
-          ${judgeHtml}
-        </div>
-
-        <div id="modalTabDebateContent" class="modal-tab-content" style="display:none;">
-          ${judgeHtml}
-          <h4 style="margin:0 0 12px 0; font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary);">Agent Convictions & Rationale</h4>
-          <div>${agentsHtml}</div>
-        </div>
-
-        <div id="modalTabNewsContent" class="modal-tab-content" style="display:none;">
-          <h4 style="margin:0 0 12px 0; font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary);">Recent News Headlines</h4>
-          ${newsHtml}
-        </div>
-      `;
-
-      document.getElementById('modalBody').innerHTML = tabsHtml;
       document.getElementById('modalBackdrop').classList.add('open');
 
-      // Initialize embedded TradingView chart widget
       setTimeout(() => {
         if (window.TradingView) {
-          try {
-            document.getElementById('tv_chart_container').innerHTML = '';
-            new window.TradingView.widget({
-              "autosize": true,
-              "symbol": "NSE:" + v.symbol,
-              "interval": "D",
-              "timezone": "Asia/Kolkata",
-              "theme": "light",
-              "style": "1",
-              "locale": "in",
-              "toolbar_bg": "#f1f5f6",
-              "enable_publishing": false,
-              "allow_symbol_change": true,
-              "container_id": "tv_chart_container"
-            });
-          } catch(e) {
-            console.error("TradingView widget init error", e);
-          }
+          document.getElementById('tv_chart_container').innerHTML = '';
+          new window.TradingView.widget({
+            "autosize": true,
+            "symbol": "NSE:" + v.symbol,
+            "interval": "D",
+            "timezone": "Asia/Kolkata",
+            "theme": "light",
+            "container_id": "tv_chart_container"
+          });
         }
-        document.querySelectorAll('.conviction-meter-fill').forEach(fill => {
-          const target = fill.getAttribute('data-target-width');
-          if (target) fill.style.width = target;
-        });
-      }, 80);
+      }, 50);
     }
-
-    window.switchModalTab = function(tabName, sym) {
-      document.getElementById('modalTabChartBtn').classList.remove('active');
-      document.getElementById('modalTabDebateBtn').classList.remove('active');
-      document.getElementById('modalTabNewsBtn').classList.remove('active');
-
-      document.getElementById('modalTabChartContent').style.display = 'none';
-      document.getElementById('modalTabDebateContent').style.display = 'none';
-      document.getElementById('modalTabNewsContent').style.display = 'none';
-
-      if (tabName === 'chart') {
-        document.getElementById('modalTabChartBtn').classList.add('active');
-        document.getElementById('modalTabChartContent').style.display = 'block';
-      } else if (tabName === 'debate') {
-        document.getElementById('modalTabDebateBtn').classList.add('active');
-        document.getElementById('modalTabDebateContent').style.display = 'block';
-      } else if (tabName === 'news') {
-        document.getElementById('modalTabNewsBtn').classList.add('active');
-        document.getElementById('modalTabNewsContent').style.display = 'block';
-      }
-    };
-
 
     function closeModal() {
       document.getElementById('modalBackdrop').classList.remove('open');
     }
 
-    document.getElementById('closeModalBtn').onclick = closeModal;
-    document.getElementById('modalBackdrop').onclick = (e) => {
-      if (e.target.id === 'modalBackdrop') closeModal();
-    };
-
-    // Client-side filtering logic
-    function applyFilters() {
-      const searchVal = activeFilters.search.toLowerCase();
-      const rows = document.querySelectorAll('.verdict-row');
-      let visibleCount = 0;
-      
-      rows.forEach(row => {
-        const symbol = row.getAttribute('data-symbol').toLowerCase();
-        const name = row.getAttribute('data-name').toLowerCase();
-        const verdict = row.getAttribute('data-verdict').toLowerCase();
-        const cap = row.getAttribute('data-cap').toLowerCase();
-        const strats = (row.getAttribute('data-strategies') || '').toLowerCase();
-        const conf = parseInt(row.getAttribute('data-confidence') || '0', 10);
-        
-        const matchesSearch = !searchVal || symbol.includes(searchVal) || name.includes(searchVal) || strats.includes(searchVal);
-        const matchesCap = activeFilters.cap === 'all' || cap === activeFilters.cap;
-
-        let matchesVerdict = false;
-        if (activeFilters.verdict === 'all') matchesVerdict = true;
-        else if (activeFilters.verdict === 'buy') matchesVerdict = verdict === 'buy';
-        else if (activeFilters.verdict === 'strong') matchesVerdict = verdict === 'buy' && (conf >= 8 || strats.includes('strong buy'));
-        else if (activeFilters.verdict === 'boom') matchesVerdict = strats.includes('boom momentum');
-        else if (activeFilters.verdict === 'breakout') matchesVerdict = strats.includes('52w high breakout');
-        else if (activeFilters.verdict === 'avoid') matchesVerdict = verdict === 'avoid';
-
-        if (matchesSearch && matchesVerdict && matchesCap) {
-          row.style.display = 'grid';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      // Show/hide empty state
-      const emptyFeedEl = document.getElementById('empty-feed-placeholder');
-      if (rows.length > 0 && visibleCount === 0) {
-        if (!emptyFeedEl) {
-          const div = document.createElement('div');
-          div.id = 'empty-feed-placeholder';
-          div.className = 'empty';
-          div.textContent = 'No verdicts match your active strategy and search filter criteria.';
-          document.getElementById('feed').appendChild(div);
-        }
-      } else if (emptyFeedEl) {
-        emptyFeedEl.remove();
-      }
+    async function triggerStart() {
+      document.getElementById('startBtn').disabled = true;
+      await fetch('/start', { method: 'POST' });
+      document.getElementById('startBtn').disabled = false;
     }
 
-    // Set up filter event listeners
-    document.getElementById('searchBar').oninput = (e) => {
-      activeFilters.search = e.target.value;
-      applyFilters();
-    };
-
-    document.getElementById('capFilter').onchange = (e) => {
-      activeFilters.cap = e.target.value;
-      applyFilters();
-    };
-
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-      tab.onclick = (e) => {
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        activeFilters.verdict = tab.getAttribute('data-verdict');
-        applyFilters();
-      };
-    });
-
-    // Update the Pipeline Stepper visual states
-    function updateStepper(activeStep, isRunning) {
-      const steps = ['scout', 'technician', 'fundamentalist', 'newsdesk', 'debate', 'judge', 'messenger'];
-      const activeIdx = steps.indexOf(activeStep);
-      
-      steps.forEach((step, idx) => {
-        const stepEl = document.getElementById(`step-${step}`);
-        const connEl = document.getElementById(`conn-${step}`);
-        const agentCard = document.querySelector(`.agent[id="${step}"]`);
-        
-        if (stepEl) {
-          stepEl.classList.remove('active', 'completed');
-          if (isRunning) {
-            if (idx < activeIdx) stepEl.classList.add('completed');
-            else if (idx === activeIdx) stepEl.classList.add('active');
-          } else {
-            if (activeStep === 'done') stepEl.classList.add('completed');
-          }
-        }
-        
-        if (connEl) {
-          connEl.classList.remove('active', 'completed');
-          if (isRunning) {
-            if (idx < activeIdx) connEl.classList.add('completed');
-            else if (idx === activeIdx) connEl.classList.add('active');
-          } else {
-            if (activeStep === 'done') connEl.classList.add('completed');
-          }
-        }
-
-        // Highlight agent cards dynamically during pipeline steps
-        if (agentCard) {
-          agentCard.classList.remove('active-agent');
-          if (isRunning) {
-            if (step === activeStep || 
-               (activeStep === 'debate' && (step === 'bull' || step === 'bear'))) {
-              agentCard.classList.add('active-agent');
-            }
-          }
-        }
-      });
-    }
-
-    function renderAgents(a) {
-      document.getElementById('agents').innerHTML = Object.values(a).map(x => `
-        <div class="card agent ${x.status}" id="${x.id}">
-          <div class="agent-head">
-            <div class="icon">${agentIcons[x.id] || ''}</div>
-            <div>
-              <div class="name">${x.name}</div>
-              <div class="role">${x.role}</div>
-            </div>
-            <div class="status"><i class="dot"></i>${x.status}</div>
-          </div>
-          <div class="bars"><i></i><i></i><i></i><i></i></div>
-          <div class="stats">
-            <div>
-              <div class="label">${x.stat1_label}</div>
-              <div class="statv">${x.stat1}</div>
-            </div>
-            <div>
-              <div class="label">${x.stat2_label}</div>
-              <div class="statv">${x.stat2}</div>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Main status rendering
-    function render(s) {
-      // KPIs
-      document.getElementById('universe').textContent = s.kpis.universe;
-      document.getElementById('debate').textContent = s.kpis.debate;
-      document.getElementById('buys').textContent = s.kpis.buy_signals;
-      document.getElementById('top').textContent = s.kpis.top_pick?.symbol || '—';
-      document.getElementById('topSub').textContent = s.kpis.top_pick ? `confidence ${s.kpis.top_pick.confidence}/10` : 'confidence —';
-      
-      // Agents
-      renderAgents(s.agents);
-      
-      // Update Stepper & highlights
-      updateStepper(s.active_step, s.running);
-
-      // Verdicts list
-      localVerdicts = s.verdicts || [];
-
-      // Render Booming & Strong Buy Category Showcase
-      const boomingStocks = localVerdicts.filter(v => {
-        const strats = (v.strategies || []).join(' ');
-        return strats.includes('BOOM') || strats.includes('Strong') || v.verdict === 'BUY';
-      });
-
-      const boomingEl = document.getElementById('boomingSection');
-      if (boomingEl && boomingStocks.length > 0) {
-        boomingEl.style.display = 'block';
-        boomingEl.innerHTML = `
-          <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fed7aa; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <h3 style="margin:0; font-size:15px; font-weight:800; color:#c2410c; display:flex; align-items:center; gap:8px;">
-                🔥 Live Booming Stocks & Strong Buy Opportunities (${boomingStocks.length})
-              </h3>
-              <span style="font-size:11px; font-weight:700; color:#9a3412;">Auto-Scanned from NSE</span>
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:12px;">
-              ${boomingStocks.map(b => `
-                <div style="background:#ffffff; border:1px solid #ffedd5; border-radius:12px; padding:12px; cursor:pointer; transition:all 0.2s;" onclick="openDebateModal('${escapeHtml(b.symbol)}')">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <span style="font-weight:800; font-size:14px; color:#9a3412;">${escapeHtml(b.symbol)}</span>
-                    <span class="badge ${b.verdict.toLowerCase()}">${escapeHtml(b.verdict)}</span>
-                  </div>
-                  <div style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
-                    ₹${b.price ?? '—'} 
-                    <span class="${b.day_change_pct >= 0 ? 'up' : 'down'}" style="font-size:11px; margin-left:4px;">
-                      ${b.day_change_pct == null ? '' : (b.day_change_pct > 0 ? '+' : '') + b.day_change_pct + '%'}
-                    </span>
-                  </div>
-                  ${b.buy_zone ? `<div style="font-size:11px; color:#065f46; font-weight:700;">Buy Zone: ${escapeHtml(b.buy_zone)}</div>` : ''}
-                  ${b.target ? `<div style="font-size:11px; color:#854d0e; font-weight:700; margin-top:2px;">Target: ${escapeHtml(b.target)}</div>` : ''}
-                  <div style="margin-top:8px; font-size:10px; font-weight:800; color:#c2410c; text-transform:uppercase;">
-                    ⚡ View Chart & Setup ➔
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      } else if (boomingEl) {
-        boomingEl.style.display = 'none';
-      }
-
-      document.getElementById('feed').innerHTML = localVerdicts.length ? 
-
-        localVerdicts.slice().reverse().map(v => {
-          const stratsList = v.strategies || [];
-          const stratsAttr = escapeHtml(stratsList.join(','));
-          return `
-          <div class="row verdict-row" data-symbol="${escapeHtml(v.symbol)}" data-name="${escapeHtml(v.name)}" data-verdict="${escapeHtml(v.verdict)}" data-confidence="${v.confidence}" data-strategies="${stratsAttr}" data-cap="${escapeHtml(v.cap_segment)}" onclick="openDebateModal('${escapeHtml(v.symbol)}')" style="cursor:pointer;">
-            <div>
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                <span class="sym">${escapeHtml(v.symbol)}</span>
-                <button onclick="event.stopPropagation(); window.copySymbol('${escapeHtml(v.symbol)}')" title="Copy Stock Symbol" style="border:none; background:#f1f5f9; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:700; cursor:pointer; color:var(--text-secondary);">Copy</button>
-                <a href="https://www.nseindia.com/get-quotes/equity?symbol=${escapeHtml(v.symbol)}" target="_blank" title="Official NSE India Quote" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:2px;" onclick="event.stopPropagation();">
-                  🏛️ NSE
-                </a>
-                <a href="https://www.tradingview.com/chart/?symbol=NSE:${escapeHtml(v.symbol)}" target="_blank" title="TradingView Live Chart" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; padding:2px 6px; font-size:10px; font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:2px;" onclick="event.stopPropagation();">
-                  📈 Chart
-                </a>
-              </div>
-              <div class="cap">${escapeHtml(v.cap_segment)} cap</div>
-            </div>
-            <div>
-              <span class="badge ${v.verdict.toLowerCase()}">${escapeHtml(v.verdict)}</span>
-              ${stratsList.map(st => {
-                let badgeStyle = "background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;";
-                if (st.includes('BOOM')) badgeStyle = "background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;";
-                else if (st.includes('Strong')) badgeStyle = "background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0;";
-                else if (st.includes('52W')) badgeStyle = "background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;";
-                return `<div class="badge" style="${badgeStyle} font-size:9px; margin-top:4px;">${escapeHtml(st)}</div>`;
-              }).join('')}
-            </div>
-            <div>
-              <b>${v.confidence}/10</b>
-              <div class="cap">${escapeHtml(v.winner)}</div>
-              <div style="font-size: 10px; font-weight: 600; margin-top: 3px;">
-                ${v.verifier_ok ? '<span style="color:var(--color-done)">✓ Grounded</span>' : '<span style="color:var(--color-watch)">⚠ Fallback</span>'}
-              </div>
-            </div>
-            <div class="why">
-              ${escapeHtml(v.why) || 'data unavailable'}
-              ${v.catalyst && v.catalyst !== 'data unavailable' ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">Catalyst: ${escapeHtml(v.catalyst)}</div>` : ''}
-              ${v.buy_zone || v.target || v.stop_loss ? `
-                <div style="margin-top:8px; padding:6px 12px; background:#eff6ff; border:1px solid #dbeafe; border-radius:8px; font-size:12px; display:inline-block; font-weight:500;">
-                  <span style="color:#1d4ed8; font-weight:700;">Buy Zone:</span> ${escapeHtml(v.buy_zone) || '—'} | 
-                  <span style="color:#b45309; font-weight:700;">Target:</span> ${escapeHtml(v.target) || '—'} | 
-                  <span style="color:#b91c1c; font-weight:700;">Stop Loss:</span> ${escapeHtml(v.stop_loss) || '—'}
-                </div>
-              ` : ''}
-              <div style="font-size: 11px; color:#3b82f6; font-weight:800; margin-top:6px; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; border:1px solid #bfdbfe; padding:3px 8px; border-radius:6px;">📊 Open Interactive Chart & Analysis ➔</div>
-
-            </div>
-            <div class="price">
-              ₹${v.price ?? '—'}
-              <div class="change ${v.day_change_pct >= 0 ? 'up' : 'down'}">
-                ${v.day_change_pct == null ? '—' : (v.day_change_pct > 0 ? '+' : '') + v.day_change_pct + '%'}
-              </div>
-            </div>
-          </div>
-        `;
-        }).join('') : 
-        `<div class="empty">${s.running ? 'Waiting for evidence…' : 'No verdicts yet.'}</div>`;
-      
-      applyFilters();
-
-
-      // Status info
-      document.getElementById('runMeta').textContent = s.running ? 
-        `Running cycle... · engine: ${s.engine}` : 
-        `${s.completed_at ? 'Completed at ' + new Date(s.completed_at).toLocaleTimeString('en-IN') : 'Idle'} · engine: ${s.engine}`;
-      
-      // Timeline logs
-      let logs = s.log || [];
-      document.getElementById('logs').innerHTML = logs.length ? 
-        logs.map(l => {
-          let parts = l.split(' · ');
-          let time = parts[0] || '';
-          let msg = parts.slice(1).join(' · ') || '';
-          let dObj = new Date(time);
-          let timeStr = isNaN(dObj.getTime()) ? time : dObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          return `<div class="log-entry"><span class="log-time">[${timeStr}]</span> <span class="log-msg">${msg}</span></div>`;
-        }).join('') : 
-        `<div style="color:var(--text-muted);text-align:center;padding:20px;">No logs yet. Waiting to start...</div>`;
-      
-      // Auto-scroll logs to bottom
-      if (s.running) {
-        let logsCard = document.getElementById('logs');
-        logsCard.scrollTop = logsCard.scrollHeight;
-      }
-
-      // Footer
-      let pulledStr = '—';
-      if (s.updated_at) {
-        let d = new Date(s.updated_at);
-        if (!isNaN(d.getTime())) {
-          pulledStr = d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-      }
-      document.getElementById('footerLeft').textContent = `Built from ${s.kpis.universe} real stocks · data pulled ${pulledStr} IST`;
-      document.getElementById('footerRight').textContent = `engine: ${s.engine}`;
-      
-      // Control disabling
-      document.getElementById('start').disabled = s.running;
-    }
-
-    async function poll() {
-      try {
-        let s = await fetch('/status').then(r => r.json());
-        render(s);
-      } catch (e) {
-        console.error("Poll error", e);
-      }
-      setTimeout(poll, 500);
-    }
-
-    // Trigger agents run
-    document.getElementById('start').onclick = async () => {
-      try {
-        await fetch('/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
-      } catch (e) {
-        console.error("Start error", e);
-      }
-    };
-
-    load();
-    poll();
+    setInterval(pollStatus, 3000);
+    fetchSectors();
+    pollStatus();
   </script>
 </body>
 </html>

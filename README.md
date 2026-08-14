@@ -1,79 +1,44 @@
-# MarketPulse — Local Indian Stock Agent Dashboard
+# MarketPulse — Autonomous NSE Stock Momentum & AI Signal Intelligence Platform
 
-A local Flask dashboard that runs a named multi-agent stock-analysis panel, stores an audit trail in SQLite, and can send qualified BUY signals to Telegram. **No orders are placed.**
- 
- live workng url: https://market-pulse-6bnv.vercel.app/
- 
-## 1. Install
+MarketPulse is a production-quality local **NSE Indian Stock Momentum Discovery, AI Debate, Risk Analysis, Backtesting, and Telegram Alert platform**.
 
-```bash
-python -m venv .venv
-# Windows
-.venv\\Scripts\\activate
-# macOS/Linux
-# source .venv/bin/activate
-pip install -r requirements.txt
-```
+It runs entirely locally on your Windows machine without broker order execution, cloud backends, or automated trading.
 
-Copy `.env.example` to `.env` and fill only the settings you want.
+---
 
-## 2. LLM options
+## 🚀 Key Features
 
-Preferred auto-detection order:
+1. **Market Regime Engine (`market_regime.py`)**: Analyzes NIFTY 50, NIFTY Bank, VIX, EMAs, and broad market breadth to classify Risk Mode (`RISK_ON`, `NORMAL`, `CAUTIOUS`, `RISK_OFF`).
+2. **Sector Intelligence Engine (`sector_engine.py`)**: Computes sector 1D, 5D, 20D returns and Stock Relative Strength vs Sector.
+3. **BOOM Scanner (`screening.py`)**: Calculates 0-100 BOOM Score and detects `EARLY BOOM`, `BOOM MOMENTUM`, and `CONFIRMED BREAKOUT` setups.
+4. **Hallucination Protection (`verifier.py`)**: Validates numeric claims against ground-truth evidence before approving outputs.
+5. **Risk Engine & Position Sizer (`risk_engine.py`)**: Calculates Entry Zone, Stop Loss, Target 1 ($\text{R:R} \ge 1.5$), Target 2 ($\text{R:R} \ge 3.0$), ATR14, and quantity sizing.
+6. **Signal Validator (`signal_validator.py`)**: 8-gate validation gate ensuring only low-risk, high-quality setups issue `BUY` signals (`BUY BLOCKED` otherwise).
+7. **SQLite Database Persistence (`database.py`)**: Tracks runs, evidence, signals, performance analytics, and backtests.
+8. **Strategy Lab Backtesting (`backtest.py`)**: Historical momentum strategy backtester with walk-forward validation and no look-ahead bias.
+9. **Telegram Signal Alerting (`telegram.py`)**: Sends validated BUY signals and daily reports with hash deduplication and standard disclaimer.
+10. **Clean SaaS Dashboard (`dashboard.html`)**: Responsive UI with embedded TradingView candlestick charts.
 
-1. `claude_code` — if `claude` is on PATH. The app invokes `claude -p ... --output-format json --model haiku|sonnet` with stdin disconnected. This uses the logged-in Claude subscription rather than an API key.
-2. `anthropic` — set `ANTHROPIC_API_KEY`.
-3. `openai` — set `OPENAI_API_KEY`.
-4. deterministic fallback — always available, with no key and no network.
+---
 
-Force one with `LLM_PROVIDER=claude_code`, `anthropic`, or `openai`.
+## 🛠️ Installation & Setup Guide
 
-## 3. Telegram
+1. Clone or download the repository.
+2. Open terminal in project folder:
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+3. Run the dashboard:
+   ```bash
+   python app.py
+   # OR run double-click: start_dashboard.bat
+   ```
+4. Access the web dashboard in your browser:
+   👉 **`http://localhost:5000`** *(or `http://127.0.0.1:5000`)*
 
-Create a bot with `@BotFather`, obtain the bot token, obtain your chat ID (for example through `@userinfobot`), then put these in `.env`:
+---
 
-```env
-TELEGRAM_BOT_TOKEN=...
-TELEGRAM_CHAT_ID=...
-```
-
-The token is never rendered in the UI or application logs. The app sends one message per fired BUY plus one daily summary when Telegram is configured.
-
-## 4. Run
-
-```bash
-python app.py
-```
-
-Open **http://127.0.0.1:5000** and click **Start agents**. Use **Demo** first. Demo is fully offline and uses the bundled evidence JSON files. Use **Live** during NSE market hours (Mon–Fri, 09:15–15:30 IST) for yfinance data.
-
-## 5. Data model
-
-Each stock is normalized into one evidence bundle with price, 52-week range, technicals, analyst information, news, and `data_gaps`. Missing values are `null` and named in `data_gaps`.
-
-This portable yfinance feed intentionally does **not** expose raw valuation ratios such as P/E or ROE in the normalized bundle; those fields are therefore not silently invented.
-
-## 6. Safety / grounding
-
-- BUY fires only at `confidence >= CONFIDENCE_THRESHOLD` (default 7).
-- Deterministic BUY requires `net >= 25` and leadership from 52-week position or RVOL.
-- The LLM is explicitly instructed to use only the evidence bundle.
-- A small verifier checks numeric claims in LLM reasoning against numbers present in the evidence. If it fails, the stock falls back to deterministic scoring for that evaluation.
-- No broker API is called and no order is placed.
-- Telegram errors do not crash the run.
-- Missing live fields do not crash the run.
-
-## 7. Editing the universe
-
-Edit `universe.json`. Keep NSE symbols as `.NS` tickers. The dashboard screens each large/mid/small bucket by day change and keeps `SHORTLIST_PER_BUCKET` (default 4).
-
-## 8. Files
-
-- `app.py` — Flask server, background state machine, SQLite audit, Telegram
-- `scoring.py` — deterministic scoring and judge
-- `llm.py` — Claude Code / Anthropic / OpenAI adapter and grounding verifier
-- `data_sources.py` — demo loader, yfinance adapter, evidence normalization
-- `dashboard.html` — self-contained UI
-- `universe.json` — editable universe
-- `demo_data/` — real-stock-shaped offline evidence bundles
-- `audit.sqlite3` — created automatically after first start
+## ⚠️ Disclaimer
+> Analysis only. No trade was placed. Not investment advice. MarketPulse is an analysis and signal-generation platform only and does not execute broker orders or guarantee returns.

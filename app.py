@@ -1,449 +1,273 @@
-import json, os, re, sqlite3, subprocess, threading, time
-from datetime import datetime, timezone
-from pathlib import Path
-from urllib.parse import urlencode
+import os
+import time
+import uuid
+import json
+import threading
+from datetime import datetime
+from flask import Flask, jsonify, request, send_from_directory
 
-import requests
-from flask import Flask, jsonify, request, send_file
+import data_sources
+import scoring
+import database
+from market_regime import evaluate_market_regime
+from sector_engine import fetch_sector_heatmaps
+from backtest import run_strategy_backtest
+from performance import calculate_system_performance, get_confidence_calibration, get_agent_performance_metrics
+from telegram import send_telegram_alert, format_telegram_signal_message
+from dotenv import load_dotenv
 
-from data_sources import load_demo_evidence, load_live_evidence, load_universe, extract_nse_symbols
-from llm import evaluate_with_engine, detect_engine
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+data_sources.load_env(ENV_PATH)
 
-BASE = Path(__file__).resolve().parent
+app = Flask(__name__, static_folder=BASE_DIR, static_url_path="")
 
-# Writable paths for Vercel Serverless environment
-if os.getenv("VERCEL"):
-    DB_PATH = Path("/tmp") / "audit.sqlite3"
-    UNIVERSE_PATH = Path("/tmp") / "universe.json"
-    ENV_PATH = Path("/tmp") / ".env"
-    
-    # Initialize templates inside /tmp if not present
-    import shutil
-    if (BASE / "universe.json").exists() and not UNIVERSE_PATH.exists():
-        try:
-            shutil.copy(BASE / "universe.json", UNIVERSE_PATH)
-        except Exception:
-            pass
-    if (BASE / ".env").exists() and not ENV_PATH.exists():
-        try:
-            shutil.copy(BASE / ".env", ENV_PATH)
-        except Exception:
-            pass
-    elif not ENV_PATH.exists():
-        try:
-            ENV_PATH.write_text("", encoding="utf-8")
-        except Exception:
-            pass
-else:
-    DB_PATH = BASE / "audit.sqlite3"
-    UNIVERSE_PATH = BASE / "universe.json"
-    ENV_PATH = BASE / ".env"
-
-
-def load_env(path=ENV_PATH, force=False):
-    if not path.exists():
-        return
-    try:
-        content = path.read_text(encoding="utf-8")
-        for raw in content.splitlines():
-            line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip().strip('"').strip("'")
-            if key:
-                if force or key not in os.environ:
-                    os.environ[key] = value
-    except Exception:
-        pass
-
-load_env()
-
-app = Flask(__name__)
-app.config["JSON_SORT_KEYS"] = False
-
-AGENTS = [
-    ("scout", "Scout", "screens the stock universe for movers", "Scanned", "Shortlisted"),
-    ("technician", "Technician", "reads price action, RVOL & trend", "Analyzed", "Avg RVOL"),
-    ("fundamentalist", "Fundamentalist", "weighs valuation & analyst targets", "Covered", "Avg upside"),
-    ("newsdesk", "Newsdesk", "pulls live news & scores sentiment", "Headlines", "Net tone"),
-    ("bull", "Bull", "argues the case to buy", "Cases", "Avg score"),
-    ("bear", "Bear", "argues the case against", "Cases", "Avg score"),
-    ("judge", "Judge", "weighs the debate, issues verdict + confidence", "Verdicts", "Buy"),
-    ("messenger", "Messenger", "sends signals to Telegram", "Sent", "Engine"),
-]
-
-state_lock = threading.Lock()
-state = {
-    "running": False, "run_id": None, "mode": "live", "engine": "deterministic",
-    "started_at": None, "updated_at": None, "completed_at": None,
+RUN_STATE = {
+    "running": False,
     "active_step": "idle",
-    "agents": {}, "kpis": {"universe": 0, "debate": 0, "buy_signals": 0, "top_pick": None},
-    "verdicts": [], "log": [], "telegram": {"configured": False, "sent": 0},
+    "mode": "live",
+    "engine": "deterministic",
+    "run_id": None,
+    "started_at": None,
+    "completed_at": None,
+    "verdicts": [],
+    "market_regime": None,
+    "sectors": [],
+    "kpis": {"universe": 0, "shortlisted": 0, "debate": 0, "buy_signals": 0, "top_pick": None},
+    "log": [],
+    "agents": {
+        "scout": {"id": "scout", "name": "Scout", "role": "screens the stock universe for movers", "status": "offline", "stat1": 0, "stat1_label": "Scanned", "stat2": 0, "stat2_label": "Shortlisted"},
+        "technician": {"id": "technician", "name": "Technician", "role": "reads price action, RVOL & trend", "status": "offline", "stat1": 0, "stat1_label": "Analyzed", "stat2": "—", "stat2_label": "Avg RVOL"},
+        "fundamentalist": {"id": "fundamentalist", "name": "Fundamentalist", "role": "weighs valuation & analyst targets", "status": "offline", "stat1": 0, "stat1_label": "Covered", "stat2": "—", "stat2_label": "Avg upside"},
+        "newsdesk": {"id": "newsdesk", "name": "Newsdesk", "role": "pulls live news & scores sentiment", "status": "offline", "stat1": 0, "stat1_label": "Headlines", "stat2": "—", "stat2_label": "Net tone"},
+        "bull": {"id": "bull", "name": "Bull", "role": "argues the case to buy", "status": "offline", "stat1": 0, "stat1_label": "Cases", "stat2": "—", "stat2_label": "Avg score"},
+        "bear": {"id": "bear", "name": "Bear", "role": "argues the case against", "status": "offline", "stat1": 0, "stat1_label": "Cases", "stat2": "—", "stat2_label": "Avg score"},
+        "judge": {"id": "judge", "name": "Judge", "role": "weighs debate, issues verdict & score", "status": "offline", "stat1": 0, "stat1_label": "Verdicts", "stat2": "—", "stat2_label": "Buy"},
+        "messenger": {"id": "messenger", "name": "Messenger", "role": "sends validated signals to Telegram", "status": "offline", "stat1": 0, "stat1_label": "Sent", "stat2": "—", "stat2_label": "Engine"}
+    }
 }
 
-def fresh_agents():
-    return {aid: {"id": aid, "name": name, "role": role, "stat1_label": s1, "stat2_label": s2,
-                  "status": "offline", "stat1": 0, "stat2": "—"} for aid, name, role, s1, s2 in AGENTS}
+STATE_LOCK = threading.Lock()
 
-state["agents"] = fresh_agents()
+def add_log(msg):
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with STATE_LOCK:
+        RUN_STATE["log"].append(f"{ts} · {msg}")
+        if len(RUN_STATE["log"]) > 100:
+            RUN_STATE["log"].pop(0)
 
-
-def db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    conn = db()
-    conn.executescript("""
-    CREATE TABLE IF NOT EXISTS runs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      started_at TEXT NOT NULL, completed_at TEXT, mode TEXT, engine TEXT,
-      universe_count INTEGER DEFAULT 0, shortlist_count INTEGER DEFAULT 0,
-      buy_count INTEGER DEFAULT 0
-    );
-    CREATE TABLE IF NOT EXISTS verdicts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      run_id INTEGER NOT NULL, created_at TEXT NOT NULL, symbol TEXT NOT NULL,
-      verdict TEXT, confidence INTEGER, winner TEXT, rationale TEXT, catalyst TEXT,
-      price REAL, day_change_pct REAL, evidence_json TEXT, result_json TEXT,
-      verifier_ok INTEGER DEFAULT 1,
-      FOREIGN KEY(run_id) REFERENCES runs(id)
-    );
-    """)
-    conn.commit(); conn.close()
-
-init_db()
-
-
-def now_ist():
-    from zoneinfo import ZoneInfo
-    return datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(timespec="seconds")
-
-
-def safe_num(v):
-    try:
-        return float(v)
-    except Exception:
-        return None
-
-
-def log(msg):
-    with state_lock:
-        state["log"].append(f"{now_ist()} · {msg}")
-        state["log"] = state["log"][-80:]
-        state["updated_at"] = now_ist()
-
-
-def set_agent(aid, status=None, stat1=None, stat2=None):
-    with state_lock:
-        a = state["agents"][aid]
-        if status is not None: a["status"] = status
-        if stat1 is not None: a["stat1"] = stat1
-        if stat2 is not None: a["stat2"] = stat2
-        state["updated_at"] = now_ist()
-
-
-def post_telegram(text):
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-    if not token or not chat_id:
-        return False, "Telegram not configured"
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    try:
-        r = requests.post(url, data={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, timeout=15)
-        if r.ok and r.json().get("ok"):
-            return True, "sent"
-        return False, "Telegram rejected request"
-    except Exception:
-        return False, "Telegram request failed"
-
-
-def signal_text(v):
-    e = v["evidence"]
-    cap = e.get("cap_segment", "")
-    symbol = e.get("symbol", "")
-    price = e.get("price", {}).get("live")
-    chg = e.get("price", {}).get("day_change_pct")
-    
-    # Extract trade guide levels
-    verdict_data = v.get("verdict", {})
-    strategies_str = ", ".join(verdict_data.get("strategies", []))
-    guide_text = ""
-    if verdict_data.get("buy_zone") or verdict_data.get("target") or verdict_data.get("stop_loss"):
-        guide_text = (f"🎯 <b>Trade Setup Guide</b>:\n"
-                      f"• Buy Zone: {verdict_data.get('buy_zone', 'data unavailable')}\n"
-                      f"• Target Price: {verdict_data.get('target', 'data unavailable')}\n"
-                      f"• Stop Loss: {verdict_data.get('stop_loss', 'data unavailable')}\n\n")
-                      
-    strats_header = f" | Strategy: {strategies_str}" if strategies_str else ""
-    nse_url = f"https://www.nseindia.com/get-quotes/equity?symbol={symbol}"
-    tv_url = f"https://in.tradingview.com/chart/?symbol=NSE:{symbol}"
-
-    return (f"🟢 BUY SIGNAL — <b>{symbol}</b> ({cap} cap{strats_header})\n"
-            f"Verdict: BUY | Confidence: {verdict_data.get('confidence', 0)}/10\n"
-            f"Winner: {verdict_data.get('winner', 'Bull')}\n\n"
-            f"{guide_text}"
-            f"Why: {verdict_data.get('rationale', 'data unavailable')}\n"
-            f"Key catalyst: {verdict_data.get('key_catalyst', 'data unavailable')}\n"
-            f"Live price: ₹{price if price is not None else 'data unavailable'} | Day change: {chg if chg is not None else 'data unavailable'}%\n\n"
-            f"🔗 Links: <a href='{nse_url}'>NSE Official Quote</a> | <a href='{tv_url}'>TradingView Chart</a>\n"
-            "— Analysis only. No trade was placed. Not investment advice.")
-
-
-
-def summary_text(fired, mode, engine):
-    lines = [f"<b>Indian Stock Analysis — Daily Summary</b>", f"Mode: {mode} | Engine: {engine}"]
-    if fired:
-        lines.append("BUY signals fired:")
-        for v in fired:
-            lines.append(f"• {v['evidence']['symbol']} — {v['verdict']['confidence']}/10")
-    else:
-        lines.append("no BUY signals fired")
-    lines.append("Analysis only. No orders were placed.")
-    return "\n".join(lines)
-
-
-def run_cycle():
-    with state_lock:
-        state["running"] = True
-        state["mode"] = "live"
-        state["run_id"] = None
-        state["started_at"] = now_ist(); state["completed_at"] = None
-        state["agents"] = fresh_agents()
-        state["verdicts"] = []
-        state["log"] = []
-        state["kpis"] = {"universe": 0, "debate": 0, "buy_signals": 0, "top_pick": None}
-        state["telegram"] = {"configured": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")), "sent": 0}
-        state["active_step"] = "scout"
-
-    delay = max(0.05, float(os.getenv("AGENT_DELAY", "0.35")))
-    threshold = max(1, min(10, int(os.getenv("CONFIDENCE_THRESHOLD", "7"))))
-    engine = detect_engine()
-    with state_lock: state["engine"] = engine
-
-    conn = db()
-    cur = conn.execute("INSERT INTO runs(started_at, mode, engine) VALUES (?, ?, ?)", (state["started_at"], "live", engine))
-    run_id = cur.lastrowid; conn.commit()
-    with state_lock: state["run_id"] = run_id
-
-    try:
-        log("Loading live data")
-        universe = load_universe(UNIVERSE_PATH)
-        if isinstance(universe, dict):
-            all_symbols = [x for bucket in universe.values() for x in bucket]
-        else:
-            all_symbols = list(universe)
-        set_agent("scout", "working")
-        evidence = load_live_evidence(universe)
-        shortlist = []
-        for bucket in ("large", "mid", "small"):
-            items = [e for e in evidence if e.get("cap_segment") == bucket]
-            items.sort(key=lambda x: (x.get("price", {}).get("day_change_pct") is not None,
-                                      x.get("price", {}).get("day_change_pct") or -999), reverse=True)
-            shortlist.extend(items[:int(os.getenv("SHORTLIST_PER_BUCKET", "4"))])
-        set_agent("scout", "done", len(evidence), len(shortlist))
-        with state_lock:
-            state["kpis"]["universe"] = len(evidence)
-            state["kpis"]["debate"] = len(shortlist)
-        log(f"Scout shortlisted {len(shortlist)} stocks from {len(evidence)}")
-        time.sleep(delay)
-
-        # Agent live stats before debate
-        with state_lock: state["active_step"] = "technician"
-        set_agent("technician", "working")
-        rv = [e.get("technicals", {}).get("rvol") for e in shortlist if e.get("technicals", {}).get("rvol") is not None]
-        avg_rvol = round(sum(rv)/len(rv), 2) if rv else None
-        set_agent("technician", "done", len(shortlist), avg_rvol if avg_rvol is not None else "—")
-        time.sleep(delay)
-
-        with state_lock: state["active_step"] = "fundamentalist"
-        set_agent("fundamentalist", "working")
-        ups = [e.get("analyst", {}).get("upside_pct") for e in shortlist if e.get("analyst", {}).get("upside_pct") is not None]
-        avg_up = round(sum(ups)/len(ups), 1) if ups else None
-        set_agent("fundamentalist", "done", len(ups), f"{avg_up}%" if avg_up is not None else "—")
-        time.sleep(delay)
-
-        with state_lock: state["active_step"] = "newsdesk"
-        set_agent("newsdesk", "working")
-        heads = sum((e.get("news", {}).get("total") or 0) for e in shortlist)
-        tones = []
-        for e in shortlist:
-            n=e.get("news", {}); total=n.get("total") or 0
-            if total: tones.append(((n.get("positive") or 0)-(n.get("negative") or 0))/total)
-        net_tone = round(sum(tones)/len(tones), 2) if tones else None
-        set_agent("newsdesk", "done", heads, net_tone if net_tone is not None else "—")
-        time.sleep(delay)
-
-        with state_lock: state["active_step"] = "debate"
-        set_agent("bull", "working")
-        set_agent("bear", "working")
-        time.sleep(delay)
-
-        results=[]
-        for idx, ev in enumerate(shortlist):
-            # one combined call per stock
-            res = evaluate_with_engine(ev)
-            results.append({"evidence": ev, **res})
-            set_agent("bull", "working", idx+1, round(res["scores"]["bull"]["score"],1))
-            set_agent("bear", "working", idx+1, round(res["scores"]["bear"]["score"],1))
-            with state_lock:
-                state["verdicts"].append({
-                    "symbol": ev["symbol"], "name": ev["name"], "cap_segment": ev["cap_segment"],
-                    "verdict": res["verdict"]["verdict"], "confidence": res["verdict"]["confidence"],
-                    "winner": res["verdict"]["winner"], "why": res["verdict"]["rationale"],
-                    "price": ev["price"]["live"], "day_change_pct": ev["price"]["day_change_pct"],
-                    "catalyst": res["verdict"]["key_catalyst"], "verifier_ok": res.get("verifier_ok", True),
-                    "scores": res.get("scores", {}),
-                    "buy_zone": res["verdict"].get("buy_zone"),
-                    "target": res["verdict"].get("target"),
-                    "stop_loss": res["verdict"].get("stop_loss"),
-                    "strategies": res["verdict"].get("strategies", []),
-                    "technicals": ev.get("technicals", {}),
-                    "range_52w": ev.get("range_52w", {}),
-                    "analyst": ev.get("analyst", {}),
-                    "news": ev.get("news", {})
-                })
-
-
-            conn.execute("INSERT INTO verdicts(run_id, created_at, symbol, verdict, confidence, winner, rationale, catalyst, price, day_change_pct, evidence_json, result_json, verifier_ok) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (run_id, now_ist(), ev["symbol"], res["verdict"]["verdict"], res["verdict"]["confidence"], res["verdict"]["winner"],
-                 res["verdict"]["rationale"], res["verdict"]["key_catalyst"], ev["price"]["live"], ev["price"]["day_change_pct"],
-                 json.dumps(ev), json.dumps(res), int(res.get("verifier_ok", True))))
-            conn.commit()
-
-        set_agent("bull", "done", len(results), round(sum(r["scores"]["bull"]["score"] for r in results)/len(results),1) if results else 0)
-        set_agent("bear", "done", len(results), round(sum(r["scores"]["bear"]["score"] for r in results)/len(results),1) if results else 0)
-        time.sleep(delay)
-
-        with state_lock: state["active_step"] = "judge"
-        set_agent("judge", "working")
-        fired=[r for r in results if r["verdict"]["verdict"] == "BUY" and r["verdict"]["confidence"] >= threshold]
-        top = sorted(results, key=lambda r: r["verdict"]["confidence"], reverse=True)[0] if results else None
-        set_agent("judge", "done", len(results), len(fired))
-        with state_lock:
-            state["kpis"]["buy_signals"] = len(fired)
-            state["kpis"]["top_pick"] = ({"symbol": top["evidence"]["symbol"], "confidence": top["verdict"]["confidence"]} if top else None)
-        time.sleep(delay)
-
-        with state_lock: state["active_step"] = "messenger"
-        set_agent("messenger", "working")
-        sent=0
-        for r in fired:
-            ok, _ = post_telegram(signal_text(r))
-            if ok: sent += 1
-        post_telegram(summary_text(fired, "live", engine))
-        set_agent("messenger", "done", sent, engine)
-        with state_lock: state["telegram"]["sent"] = sent
-        conn.execute("UPDATE runs SET completed_at=?, universe_count=?, shortlist_count=?, buy_count=? WHERE id=?",
-                     (now_ist(), len(evidence), len(shortlist), len(fired), run_id))
-        conn.commit()
-        log(f"Run complete: {len(fired)} BUY signal(s)")
-    except Exception as exc:
-        import traceback
-        tb = traceback.format_exc()
-        token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-        if token and token in tb:
-            tb = tb.replace(token, "[REDACTED_TELEGRAM_BOT_TOKEN]")
-        print(f"Error in background run_cycle:\n{tb}")
-        log("Run stopped safely due to an internal error")
-    finally:
-        conn.close()
-        with state_lock:
-            state["running"] = False
-            state["completed_at"] = now_ist()
-            state["active_step"] = "idle"
-            for a in state["agents"].values():
-                if a["status"] == "working": a["status"] = "done"
-            state["updated_at"] = now_ist()
-
-
-@app.get("/")
+@app.route("/")
 def index():
-    return send_file(BASE / "dashboard.html")
-
-@app.post("/start")
-def start():
-    if state["running"]:
-        return jsonify({"ok": False, "error": "A run is already active"}), 409
-    threading.Thread(target=run_cycle, daemon=True).start()
-    return jsonify({"ok": True, "mode": "live"})
+    return send_from_directory(BASE_DIR, "dashboard.html")
 
 @app.get("/status")
-def status():
-    with state_lock:
-        return jsonify(json.loads(json.dumps(state)))
+def get_status():
+    with STATE_LOCK:
+        return jsonify(RUN_STATE)
 
 @app.get("/config")
-def config():
-    universe = load_universe(UNIVERSE_PATH)
+def get_config():
+    conf_thresh = int(os.getenv("CONFIDENCE_THRESHOLD", "7"))
+    univ = data_sources.load_universe(os.path.join(BASE_DIR, "universe.json"))
     return jsonify({
         "brand": os.getenv("BRAND", "MarketPulse"),
-        "confidence_threshold": int(os.getenv("CONFIDENCE_THRESHOLD", "7")),
+        "confidence_threshold": conf_thresh,
+        "llm_provider": os.getenv("LLM_PROVIDER", "auto"),
+        "telegram_configured": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")),
         "agent_delay": float(os.getenv("AGENT_DELAY", "0.35")),
         "shortlist_per_bucket": int(os.getenv("SHORTLIST_PER_BUCKET", "4")),
-        "port": int(os.getenv("PORT", "5000")),
-        "telegram_bot_token": os.getenv("TELEGRAM_BOT_TOKEN", ""),
-        "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID", ""),
-        "telegram_configured": bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID")),
-        "llm_provider": os.getenv("LLM_PROVIDER", "auto"),
-        "universe": universe
+        "universe": univ,
+        "port": int(os.getenv("PORT", "5000"))
     })
 
-@app.post("/config")
-def save_config():
+@app.get("/market-regime")
+def get_market_regime():
+    reg = evaluate_market_regime()
+    return jsonify({"ok": True, "market_regime": reg})
+
+@app.get("/sectors")
+def get_sectors():
+    secs = fetch_sector_heatmaps()
+    return jsonify({"ok": True, "sectors": secs})
+
+@app.get("/signals")
+def get_signals():
+    conn = database.get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM verdicts ORDER BY id DESC LIMIT 50")
+    rows = c.fetchall()
+    conn.close()
+    return jsonify({"ok": True, "signals": [dict(r) for r in rows]})
+
+@app.get("/watchlist")
+def get_user_watchlist():
+    items = database.get_watchlist()
+    return jsonify({"ok": True, "watchlist": items})
+
+@app.post("/watchlist")
+def add_user_watchlist():
     data = request.get_json(silent=True) or {}
-    
-    # 1. Save universe if present
-    if "universe" in data:
-        try:
-            univ_data = data["universe"]
-            if isinstance(univ_data, (dict, list)):
-                UNIVERSE_PATH.write_text(json.dumps(univ_data, indent=2), encoding="utf-8")
-        except Exception as e:
-            return jsonify({"ok": False, "error": f"Failed to save universe.json: {str(e)}"}), 400
-            
-    # 2. Save .env config
-    try:
-        env_lines = []
-        keys = [
-            ("TELEGRAM_BOT_TOKEN", data.get("telegram_bot_token")),
-            ("TELEGRAM_CHAT_ID", data.get("telegram_chat_id")),
-            ("LLM_PROVIDER", data.get("llm_provider")),
-            ("BRAND", data.get("brand")),
-            ("CONFIDENCE_THRESHOLD", data.get("confidence_threshold")),
-            ("AGENT_DELAY", data.get("agent_delay")),
-            ("SHORTLIST_PER_BUCKET", data.get("shortlist_per_bucket")),
-            ("PORT", data.get("port")),
-            ("CLAUDE_MODEL", os.getenv("CLAUDE_MODEL", "haiku")),
-        ]
-        for key, val in keys:
-            if val is not None:
-                env_lines.append(f"{key}={val}")
-            else:
-                env_lines.append(f"{key}={os.getenv(key, '')}")
-        ENV_PATH.write_text("\n".join(env_lines), encoding="utf-8")
-        load_env(ENV_PATH, force=True)
-    except Exception as e:
-        return jsonify({"ok": False, "error": f"Failed to write .env file: {str(e)}"}), 500
-        
-    return jsonify({"ok": True})
+    sym = data.get("symbol")
+    if not sym: return jsonify({"ok": False, "error": "Symbol required"}), 400
+    database.add_to_watchlist(sym, data.get("notes", ""))
+    return jsonify({"ok": True, "watchlist": database.get_watchlist()})
+
+@app.delete("/watchlist/<symbol>")
+def delete_user_watchlist(symbol):
+    database.remove_from_watchlist(symbol)
+    return jsonify({"ok": True, "watchlist": database.get_watchlist()})
+
+@app.get("/performance")
+def get_perf_stats():
+    sys_perf = calculate_system_performance()
+    calib = get_confidence_calibration()
+    return jsonify({"ok": True, "system_performance": sys_perf, "calibration": calib})
+
+@app.get("/agent-performance")
+def get_agent_perf_stats():
+    agent_perf = get_agent_performance_metrics()
+    return jsonify({"ok": True, "agent_performance": agent_perf})
+
+@app.post("/backtest")
+def trigger_backtest():
+    data = request.get_json(silent=True) or {}
+    strat_name = data.get("strategy_name", "Momentum Breakout")
+    rvol_min = float(data.get("rvol_min", 1.2))
+    res = run_strategy_backtest(strategy_name=strat_name, rvol_min=rvol_min)
+    return jsonify({"ok": True, "backtest": res})
 
 @app.post("/api/parse-pasted-stocks")
 def parse_pasted_stocks():
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
-    symbols = extract_nse_symbols(raw_text)
+    symbols = data_sources.extract_nse_symbols(raw_text)
     return jsonify({"ok": True, "symbols": symbols, "count": len(symbols)})
 
-if __name__ == "__main__":
+def background_analysis_pipeline(custom_symbols=None):
+    with STATE_LOCK:
+        run_id = f"run_{int(time.time())}"
+        RUN_STATE.update({
+            "running": True,
+            "run_id": run_id,
+            "started_at": datetime.now().isoformat(),
+            "completed_at": None,
+            "active_step": "scout",
+            "verdicts": [],
+            "log": []
+        })
 
+    add_log(f"Starting pipeline run ID: {run_id}")
+
+    # Evaluate Market Regime & Sector Intelligence
+    regime = evaluate_market_regime()
+    sectors = fetch_sector_heatmaps()
+    with STATE_LOCK:
+        RUN_STATE["market_regime"] = regime
+        RUN_STATE["sectors"] = sectors
+
+    # Step 1: Scout
+    add_log("Step 1/7: Scout screening NSE universe...")
+    with STATE_LOCK:
+        RUN_STATE["agents"]["scout"]["status"] = "working"
+    
+    univ_path = os.path.join(BASE_DIR, "universe.json")
+    univ_dict = data_sources.load_universe(univ_path)
+    
+    if custom_symbols and len(custom_symbols) > 0:
+        flat = [s.upper().replace(".NS","") + ".NS" for s in custom_symbols]
+    else:
+        flat = []
+        for cat in ["large", "mid", "small"]:
+            flat.extend(univ_dict.get(cat, []))
+
+    add_log(f"Fetching evidence for {len(flat)} tickers...")
+    evidences = data_sources.load_live_evidence(flat if flat else univ_dict)
+
+    with STATE_LOCK:
+        RUN_STATE["kpis"]["universe"] = len(evidences)
+        RUN_STATE["agents"]["scout"]["stat1"] = len(evidences)
+        RUN_STATE["agents"]["scout"]["stat2"] = len(evidences)
+        RUN_STATE["agents"]["scout"]["status"] = "done"
+
+    # Step 2-6: Technician, Fundamentalist, Newsdesk, Debate, Judge
+    add_log("Step 2-6/7: Agent debate & risk scoring...")
+    verdicts = []
+    buy_signals = 0
+
+    for ev in evidences:
+        v = scoring.deterministic_evaluate(ev, market_regime=regime)
+        verdicts.append(v)
+        database.save_verdict(run_id, v)
+        if v.get("verdict") == "BUY":
+            buy_signals += 1
+
+    top_pick = max(verdicts, key=lambda x: x.get("marketpulse_score", 0)) if verdicts else None
+
+    # Step 7: Messenger (Telegram)
+    add_log("Step 7/7: Messenger Telegram validation...")
+    with STATE_LOCK:
+        RUN_STATE["agents"]["messenger"]["status"] = "working"
+
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    sent_count = 0
+
+    if bot_token and chat_id:
+        for v in verdicts:
+            if v.get("validated") and v.get("verdict") == "BUY":
+                msg = format_telegram_signal_message(v)
+                res = send_telegram_alert(bot_token, chat_id, msg, symbol=v.get("symbol"), signal_type="BUY SIGNAL")
+                if res.get("sent"):
+                    sent_count += 1
+
+    with STATE_LOCK:
+        RUN_STATE["agents"]["messenger"]["stat1"] = sent_count
+        RUN_STATE["agents"]["messenger"]["status"] = "done"
+        RUN_STATE.update({
+            "running": False,
+            "active_step": "done",
+            "completed_at": datetime.now().isoformat(),
+            "verdicts": verdicts,
+            "kpis": {
+                "universe": len(evidences),
+                "shortlisted": len(evidences),
+                "debate": len(evidences),
+                "buy_signals": buy_signals,
+                "top_pick": top_pick
+            }
+        })
+        database.save_run({
+            "id": run_id,
+            "started_at": RUN_STATE["started_at"],
+            "completed_at": RUN_STATE["completed_at"],
+            "engine": RUN_STATE["engine"],
+            "mode": RUN_STATE["mode"],
+            "universe_count": len(evidences),
+            "shortlisted_count": len(evidences),
+            "boom_count": len([v for v in verdicts if v.get("boom_score", 0) >= 70]),
+            "buy_count": buy_signals,
+            "status": "COMPLETED"
+        })
+
+    add_log("Pipeline cycle completed successfully!")
+
+@app.post("/start")
+@app.post("/scan")
+def trigger_start():
+    data = request.get_json(silent=True) or {}
+    custom_syms = data.get("symbols")
+    with STATE_LOCK:
+        if RUN_STATE["running"]:
+            return jsonify({"ok": False, "error": "Analysis cycle already running"}), 400
+
+    thread = threading.Thread(target=background_analysis_pipeline, args=(custom_syms,))
+    thread.daemon = True
+    thread.start()
+    return jsonify({"ok": True, "mode": "live"})
+
+if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     print(f"MarketPulse Dashboard live at:")
     print(f" • Localhost: http://localhost:{port}")
     print(f" • IP Access: http://127.0.0.1:{port}")
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
-

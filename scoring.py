@@ -1,101 +1,155 @@
 import math
+from screening import calculate_boom_score
+from risk_engine import calculate_risk_parameters
+from signal_validator import validate_signal
+from verifier import verify_llm_grounding
 
+def clamp(val, min_val=0, max_val=100):
+    return max(min_val, min(max_val, val))
 
-def clamp(x, lo=0, hi=100): return max(lo, min(hi, x))
-def pct(e, path):
-    cur=e
-    for p in path:
-        cur=cur.get(p) if isinstance(cur,dict) else None
-    return cur
+def calculate_data_quality(evidence):
+    """Calculates 0-100 Data Quality Score based on evidence data completeness."""
+    gaps = evidence.get("data_gaps", [])
+    total_checks = 12
+    missing_count = len(gaps)
+    quality = max(0, min(100, round(((total_checks - missing_count) / total_checks) * 100)))
+    return quality
 
+def deterministic_evaluate(evidence, market_regime=None, sector_data=None, config=None):
+    """
+    Evaluates evidence using MarketPulse scoring, BOOM scanning, Risk engine, and Signal validation.
+    """
+    symbol = evidence.get("symbol")
+    p = evidence.get("price", {})
+    t = evidence.get("technicals", {})
+    a = evidence.get("analyst", {})
+    r = evidence.get("range_52w", {})
+    n = evidence.get("news", {})
 
-def deterministic_evaluate(e):
-    t=e.get("technicals",{}); p=e.get("price",{}); r=e.get("range_52w",{}); a=e.get("analyst",{}); n=e.get("news",{})
-    bull=20; bear=20; br=[]; rr=[]
-    rvol=t.get("rvol"); pos=r.get("position_pct"); sma=t.get("price_vs_sma_pct"); trend=t.get("trend")
-    close=t.get("day_range_position_pct"); upside=a.get("upside_pct"); buy=a.get("buy_pct"); sell=a.get("sell_pct")
-    neg=n.get("negative") or 0; posnews=n.get("positive") or 0; total=n.get("total") or 0; wr=t.get("window_return_pct")
-    if rvol is not None:
-        bull += min(20, max(0,(rvol-1)*8)); bear += min(12, max(0,(1-rvol)*12))
-        if rvol >= 2: br.append(f"RVOL {rvol:.2f} supports participation")
-        if rvol < 1: rr.append(f"RVOL {rvol:.2f} is below average")
-    if pos is not None:
-        if pos >= 85: bull += 18; br.append(f"52-week position {pos:.1f}% is strong")
-        elif pos < 30: bear += 18; rr.append(f"52-week position {pos:.1f}% is weak")
-    if sma is not None and trend == "up": bull += 12; br.append(f"price is {sma:.1f}% above SMA")
-    elif sma is not None and (sma < 0 or trend == "down"): bear += 12; rr.append(f"price is {sma:.1f}% versus SMA")
-    if close is not None:
-        if close >= 70: bull += 8; br.append(f"day range close {close:.1f}% is firm")
-        elif close <= 30: bear += 8; rr.append(f"day range close {close:.1f}% is weak")
-    if upside is not None and upside >= 10: bull += 10; br.append(f"analyst upside {upside:.1f}% is favorable")
-    elif upside is not None and upside <= 0: bear += 10; rr.append(f"analyst upside {upside:.1f}% is absent")
-    if buy is not None and buy >= 80: bull += 8; br.append(f"analyst buy share {buy:.1f}% is high")
-    elif buy is not None and buy < 55: bear += 8; rr.append(f"analyst buy share {buy:.1f}% is low")
-    if sell is not None and sell >= 25: bear += 8; rr.append(f"analyst sell share {sell:.1f}% is elevated")
-    if posnews > neg and total: bull += 6; br.append("news tone is positive")
-    elif neg > posnews and total: bear += 6; rr.append("news tone is negative")
-    if wr is not None and wr > 0: bull += 8; br.append(f"window return {wr:.1f}% is positive")
-    elif wr is not None and wr < 0: bear += 8; rr.append(f"window return {wr:.1f}% is negative")
-    if r.get("pct_from_high") is not None and r["pct_from_high"] <= -20: bear += 8; rr.append(f"stock is {r['pct_from_high']:.1f}% from 52-week high")
-    bull=round(clamp(bull),1); bear=round(clamp(bear),1); net=round(bull-bear,1)
     latest = p.get("live")
     day_chg = p.get("day_change_pct")
+    rvol = t.get("rvol") or 1.0
+    pos = r.get("position_pct")
+    trend = t.get("trend") or "sideways"
+    close = t.get("day_range_position_pct")
+    sma = t.get("price_vs_sma_pct")
+    upside = a.get("upside_pct")
+    buy = a.get("buy_pct")
+    sell = a.get("sell_pct")
+    posnews = n.get("positive", 0)
+    neg = n.get("negative", 0)
+    total_news = n.get("total", 0)
 
-    # Dynamic BOOM and Strong Buy classification
-    has_boom_momentum = (rvol is not None and rvol >= 1.1) or (day_chg is not None and day_chg >= 0.3) or (pos is not None and pos >= 60) or (close is not None and close >= 55) or (trend == "up")
-    has_bull_support = (bull >= bear - 15) or (upside is not None and upside >= 10) or (sma is not None and sma >= 0)
+    # 1. Bull & Bear conviction scoring (0-100)
+    bull = 35.0
+    bear = 25.0
+    br = []
+    rr = []
 
-    if (net >= 5 or (has_boom_momentum and has_bull_support)):
+    if rvol >= 2.0: bull += 15; br.append(f"RVOL {rvol:.2f}x indicates institutional volume surge")
+    elif rvol >= 1.2: bull += 8; br.append(f"RVOL {rvol:.2f}x is above average")
+    elif rvol < 0.8: bear += 10; rr.append(f"RVOL {rvol:.2f}x is below average")
+
+    if pos is not None and pos >= 75: bull += 14; br.append(f"52-week position {pos:.1f}% is in breakout territory")
+    elif pos is not None and pos <= 30: bear += 12; rr.append(f"52-week position {pos:.1f}% shows structural weakness")
+
+    if trend == "up": bull += 12; br.append("technical trend is bullish")
+    elif trend == "down": bear += 12; rr.append("technical trend is bearish")
+
+    if sma is not None and sma >= 2.0: bull += 8; br.append(f"price is {sma:.1f}% above 20-SMA")
+    elif sma is not None and sma < 0: bear += 8; rr.append(f"price is {abs(sma):.1f}% below 20-SMA")
+
+    if upside is not None and upside >= 10: bull += 10; br.append(f"analyst upside {upside:.1f}% is favorable")
+    elif upside is not None and upside <= 0: bear += 8; rr.append(f"analyst upside {upside:.1f}% is absent")
+
+    if posnews > neg and total_news: bull += 6; br.append("news tone is positive")
+    elif neg > posnews and total_news: bear += 6; rr.append("news tone is negative")
+
+    bull = clamp(bull)
+    bear = clamp(bear)
+    net = round(bull - bear, 1)
+
+    # 2. MarketPulse Score /100
+    tech_score = 25 if trend == "up" and (sma or 0) > 0 else 15
+    mom_score = 20 if (day_chg or 0) > 1.0 else 12
+    rvol_score = 15 if rvol >= 1.5 else 8
+    fund_score = 15 if (upside or 0) > 10 else 8
+    news_score = 10 if posnews >= neg else 5
+    reg_score = 10 if market_regime and market_regime.get("risk_mode") == "RISK_ON" else 6
+    risk_score = 5
+
+    marketpulse_score = clamp(tech_score + mom_score + rvol_score + fund_score + news_score + reg_score + risk_score)
+
+    # 3. BOOM Score & Classification
+    boom_data = calculate_boom_score(evidence, market_regime, sector_data)
+    boom_score = boom_data["score"]
+    boom_type = boom_data["boom_type"]
+
+    # 4. Verdict & AI Confidence
+    has_boom = boom_score >= 70 or rvol >= 1.2 or (day_chg or 0) >= 0.3 or trend == "up"
+    if (net >= 5 or has_boom) and (market_regime is None or market_regime.get("risk_mode") != "RISK_OFF"):
         verdict = "BUY"
-    elif net <= -20 and not has_boom_momentum:
+    elif net <= -20:
         verdict = "AVOID"
     else:
         verdict = "WATCH"
-    
-    conf = max(1, min(10, round(6 + (bull - bear) / 12)))
-    if verdict == "BUY":
-        conf = max(7, conf)
+
+    conf = max(1, min(10, round(6 + net / 12)))
+    if verdict == "BUY": conf = max(7, conf)
 
     winner = "Bull" if bull >= bear else "Bear"
-    rationale = (br[0] if winner == "Bull" and br else rr[0] if rr else "Price action and technical momentum evaluated.")
-    catalyst = (br[1] if winner == "Bull" and len(br) > 1 else br[0] if br else "Positive analyst upside and momentum")
-    
-    buy_zone = None
-    target = None
-    stop_loss = None
-    
-    # Always generate trade setup guide for BUY, WATCH, and BOOM momentum stocks
-    if latest is not None and (verdict == "BUY" or verdict == "WATCH" or has_boom_momentum):
-        buy_zone = f"₹{latest:.2f} - ₹{latest*1.015:.2f}"
-        sw_low = t.get("swing_low")
-        if sw_low is not None and sw_low < latest and sw_low > latest * 0.85:
-            stop_loss = f"₹{sw_low:.2f}"
-        else:
-            stop_loss = f"₹{latest * 0.92:.2f} (8% SL)"
-        t_mean = a.get("target_mean")
-        if t_mean is not None and t_mean > latest:
-            target = f"₹{t_mean:.2f}"
-        else:
-            target = f"₹{latest * 1.15:.2f} (15% Target)"
+    rationale = br[0] if winner == "Bull" and br else rr[0] if rr else "Technical momentum and market factors evaluated."
+    catalyst = br[1] if winner == "Bull" and len(br) > 1 else br[0] if br else "Positive analyst upside and momentum"
 
-    # Identify matching NSE strategies
-    strategies = []
-    if verdict == "BUY" and (conf >= 7 or bull >= 40):
-        strategies.append("Strong Buy")
-    if has_boom_momentum:
-        strategies.append("BOOM Momentum")
-    if pos is not None and pos >= 75:
-        strategies.append("52W High Breakout")
-    if pos is not None and pos <= 45 and upside is not None and upside >= 10:
-        strategies.append("Value Reversal")
+    # 5. Risk Engine Parameters
+    risk_params = calculate_risk_parameters(evidence)
 
+    # 6. Data Quality Score
+    dq_score = calculate_data_quality(evidence)
 
-            
-    scores={
-      "bull":{"score":bull,"reasons":br[:4]}, "bear":{"score":bear,"reasons":rr[:4]},
-      "fundamentalist":{"score":round(clamp((50+(upside or 0)*1.5)),1),"reasons":br[:2] if upside is not None else ["data unavailable"]},
-      "technician":{"score":round(clamp(50+(sma or 0)*1.2+(rvol or 1)*5),1),"reasons":br[:2] if sma is not None else ["data unavailable"]},
-      "newsdesk":{"score":round(clamp(50+((posnews-neg)*8)),1),"reasons":["positive news" if posnews>neg else "negative news" if neg>posnews else "mixed news"]},
+    verdict_payload = {
+        "symbol": symbol,
+        "name": evidence.get("name"),
+        "cap_segment": evidence.get("cap_segment"),
+        "sector": evidence.get("sector"),
+        "price": latest,
+        "day_change_pct": day_chg,
+        "verdict": verdict,
+        "confidence": conf,
+        "marketpulse_score": marketpulse_score,
+        "boom_score": boom_score,
+        "boom_type": boom_type,
+        "breakout_quality": boom_data["breakout_quality"],
+        "data_quality_score": dq_score,
+        "winner": winner,
+        "why": rationale,
+        "catalyst": catalyst,
+        "buy_zone": risk_params["buy_zone"],
+        "target": risk_params["target_1_str"],
+        "target_2": risk_params["target_2_str"],
+        "stop_loss": risk_params["stop_loss_str"],
+        "rr_ratio": risk_params["rr_ratio"],
+        "invalidation": f"Daily close below {risk_params['stop_loss_str']}",
+        "kill_conditions": [f"Daily close below {risk_params['stop_loss_str']}", "Market Regime switches to RISK_OFF"],
+        "strategies": [boom_type] if boom_type != "NORMAL" else ["Momentum Watch"],
+        "technicals": t,
+        "range_52w": r,
+        "analyst": a,
+        "news": n,
+        "risk_params": risk_params,
+        "scores": {
+            "bull": {"score": bull, "reasons": br[:4]},
+            "bear": {"score": bear, "reasons": rr[:4]}
+        }
     }
-    return {"scores":scores,"verdict":{"winner":winner,"verdict":verdict,"confidence":conf,"rationale":rationale,"key_catalyst":catalyst,"bull_score":bull,"bear_score":bear,"net":net,"buy_zone":buy_zone,"target":target,"stop_loss":stop_loss,"strategies":strategies},"verifier_ok":True}
 
+    # 7. Signal Validation Gate
+    validation = validate_signal(verdict_payload, evidence, market_regime, config)
+    verdict_payload["validated"] = validation["validated"]
+    verdict_payload["validation_status"] = validation["status"]
+    verdict_payload["validation_reason"] = validation["reason"]
+
+    if not validation["validated"] and verdict_payload["verdict"] == "BUY":
+        verdict_payload["verdict"] = "WATCH"
+
+    return verdict_payload
