@@ -14,7 +14,8 @@ from sector_engine import fetch_sector_heatmaps
 from backtest import run_strategy_backtest
 from performance import calculate_system_performance, get_confidence_calibration, get_agent_performance_metrics
 from telegram import send_telegram_alert, format_telegram_signal_message
-from dotenv import load_dotenv
+
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
@@ -60,12 +61,12 @@ def add_log(msg):
 def index():
     return send_from_directory(BASE_DIR, "dashboard.html")
 
-@app.get("/status")
+@app.route("/status", methods=["GET"])
 def get_status():
     with STATE_LOCK:
         return jsonify(RUN_STATE)
 
-@app.get("/config")
+@app.route("/config", methods=["GET"])
 def get_config():
     conf_thresh = int(os.getenv("CONFIDENCE_THRESHOLD", "7"))
     univ = data_sources.load_universe(os.path.join(BASE_DIR, "universe.json"))
@@ -80,17 +81,17 @@ def get_config():
         "port": int(os.getenv("PORT", "5000"))
     })
 
-@app.get("/market-regime")
+@app.route("/market-regime", methods=["GET"])
 def get_market_regime():
     reg = evaluate_market_regime()
     return jsonify({"ok": True, "market_regime": reg})
 
-@app.get("/sectors")
+@app.route("/sectors", methods=["GET"])
 def get_sectors():
     secs = fetch_sector_heatmaps()
     return jsonify({"ok": True, "sectors": secs})
 
-@app.get("/signals")
+@app.route("/signals", methods=["GET"])
 def get_signals():
     conn = database.get_connection()
     c = conn.cursor()
@@ -99,36 +100,33 @@ def get_signals():
     conn.close()
     return jsonify({"ok": True, "signals": [dict(r) for r in rows]})
 
-@app.get("/watchlist")
-def get_user_watchlist():
+@app.route("/watchlist", methods=["GET", "POST"])
+def user_watchlist_route():
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        sym = data.get("symbol")
+        if not sym: return jsonify({"ok": False, "error": "Symbol required"}), 400
+        database.add_to_watchlist(sym, data.get("notes", ""))
     items = database.get_watchlist()
     return jsonify({"ok": True, "watchlist": items})
 
-@app.post("/watchlist")
-def add_user_watchlist():
-    data = request.get_json(silent=True) or {}
-    sym = data.get("symbol")
-    if not sym: return jsonify({"ok": False, "error": "Symbol required"}), 400
-    database.add_to_watchlist(sym, data.get("notes", ""))
-    return jsonify({"ok": True, "watchlist": database.get_watchlist()})
-
-@app.delete("/watchlist/<symbol>")
+@app.route("/watchlist/<symbol>", methods=["DELETE"])
 def delete_user_watchlist(symbol):
     database.remove_from_watchlist(symbol)
     return jsonify({"ok": True, "watchlist": database.get_watchlist()})
 
-@app.get("/performance")
+@app.route("/performance", methods=["GET"])
 def get_perf_stats():
     sys_perf = calculate_system_performance()
     calib = get_confidence_calibration()
     return jsonify({"ok": True, "system_performance": sys_perf, "calibration": calib})
 
-@app.get("/agent-performance")
+@app.route("/agent-performance", methods=["GET"])
 def get_agent_perf_stats():
     agent_perf = get_agent_performance_metrics()
     return jsonify({"ok": True, "agent_performance": agent_perf})
 
-@app.post("/backtest")
+@app.route("/backtest", methods=["POST"])
 def trigger_backtest():
     data = request.get_json(silent=True) or {}
     strat_name = data.get("strategy_name", "Momentum Breakout")
@@ -136,12 +134,13 @@ def trigger_backtest():
     res = run_strategy_backtest(strategy_name=strat_name, rvol_min=rvol_min)
     return jsonify({"ok": True, "backtest": res})
 
-@app.post("/api/parse-pasted-stocks")
+@app.route("/api/parse-pasted-stocks", methods=["POST"])
 def parse_pasted_stocks():
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
     symbols = data_sources.extract_nse_symbols(raw_text)
     return jsonify({"ok": True, "symbols": symbols, "count": len(symbols)})
+
 
 def background_analysis_pipeline(custom_symbols=None):
     with STATE_LOCK:
