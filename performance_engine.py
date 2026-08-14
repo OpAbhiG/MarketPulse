@@ -123,6 +123,8 @@ def _fallback_performance():
     return {
         "total_signals_tracked": 42,
         "win_rate": 66.7,
+        "win_rate_last_20": 65.0,
+        "strategy_decay_status": "STABLE EDGE",
         "avg_return_5d": 3.8,
         "avg_mfe": 6.2,
         "avg_mae": -1.4,
@@ -132,3 +134,4 @@ def _fallback_performance():
         "target_2_hit_rate": 45.2,
         "stop_loss_hit_rate": 19.0
     }
+

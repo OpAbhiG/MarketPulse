@@ -3,6 +3,7 @@ from paper_trading import place_paper_trade, get_paper_trading_summary
 from feature_attribution import calculate_feature_attributions
 from ablation import run_strategy_ablation
 from backtest import evaluate_parameter_sensitivity, run_strategy_backtest
+from performance_engine import get_performance_summary
 
 class TestV5PaperTrading(unittest.TestCase):
 
@@ -17,6 +18,15 @@ class TestV5PaperTrading(unittest.TestCase):
         sig_id = place_paper_trade(verdict_buy)
         self.assertIsNotNone(sig_id)
         self.assertTrue(sig_id.startswith("sig_"))
+
+    def test_paper_trade_avoid_rejection(self):
+        verdict_avoid = {
+            "symbol": "POLYCAB",
+            "decision_state": "AVOID",
+            "price": 8900.0
+        }
+        sig_id = place_paper_trade(verdict_avoid)
+        self.assertIsNone(sig_id)
 
     def test_paper_trading_summary(self):
         summary = get_paper_trading_summary()
@@ -35,6 +45,12 @@ class TestV5PaperTrading(unittest.TestCase):
         self.assertIn("benchmark", abl)
         self.assertEqual(abl["most_critical_feature"], "Market Regime Filter")
 
+    def test_ablation_component_drop(self):
+        abl = run_strategy_ablation()
+        base_pf = abl["benchmark"]["profit_factor"]
+        regime_dropped_pf = [a["profit_factor"] for a in abl["ablation_tests"] if a["model"] == "Base - Regime Filter"][0]
+        self.assertGreater(base_pf, regime_dropped_pf)
+
     def test_parameter_sensitivity(self):
         sens = evaluate_parameter_sensitivity()
         self.assertEqual(sens["stability"], "ROBUST")
@@ -43,6 +59,24 @@ class TestV5PaperTrading(unittest.TestCase):
         res = run_strategy_backtest()
         self.assertIn("edge_status", res)
         self.assertIn("survivorship_bias_warning", res)
+
+    def test_walk_forward_oos_split(self):
+        res = run_strategy_backtest()
+        wf = res.get("walk_forward", {})
+        self.assertIn("in_sample_win_rate", wf)
+        self.assertIn("out_sample_win_rate", wf)
+
+    def test_transaction_cost_deduction(self):
+        res = run_strategy_backtest()
+        self.assertIn("fee_structure", res)
+
+    def test_strategy_decay_detection(self):
+        perf = get_performance_summary()
+        self.assertIn("strategy_decay_status", perf)
+
+    def test_survivorship_bias_flag(self):
+        res = run_strategy_backtest()
+        self.assertTrue("SURVIVORSHIP BIAS RISK" in res["survivorship_bias_warning"])
 
 if __name__ == "__main__":
     unittest.main()
