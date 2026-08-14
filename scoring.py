@@ -5,6 +5,7 @@ from swing_engine import calculate_swing_score
 from false_breakout_engine import evaluate_breakout_extension_and_validity
 from risk_engine import calculate_risk_parameters
 from signal_validator import validate_signal
+from decision_engine import evaluate_trading_decision
 from verifier import verify_llm_grounding
 
 def clamp(val, min_val=0, max_val=100):
@@ -20,7 +21,7 @@ def calculate_data_quality(evidence):
 
 def deterministic_evaluate(evidence, market_regime=None, sector_data=None, config=None, active_positions=None):
     """
-    Evaluates evidence using Intraday, Swing, BOOM, False Breakout, Risk, and Master Opportunity Scoring.
+    Evaluates evidence using Intraday, Swing, BOOM, False Breakout, Risk, and Master Decision Scoring.
     """
     symbol = evidence.get("symbol")
     p = evidence.get("price", {})
@@ -34,12 +35,8 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     rvol = t.get("rvol") or 1.0
     pos = r.get("position_pct")
     trend = t.get("trend") or "sideways"
-    close = t.get("day_range_position_pct")
     sma = t.get("price_vs_sma_pct")
     upside = a.get("upside_pct")
-    posnews = n.get("positive", 0)
-    neg = n.get("negative", 0)
-    total_news = n.get("total", 0)
 
     # 1. Intraday & Swing Engines
     intra_res = calculate_intraday_score(evidence, market_regime, sector_data)
@@ -89,7 +86,11 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     boom_score = boom_data["score"]
     boom_type = boom_data["boom_type"]
 
-    # 5. Verdict & AI Confidence
+    # 5. Risk Engine Parameters & Data Quality
+    risk_params = calculate_risk_parameters(evidence, active_positions=active_positions)
+    dq_score = calculate_data_quality(evidence)
+
+    # Base Verdict
     has_boom = boom_score >= 70 or rvol >= 1.2 or (day_chg or 0) >= 0.3 or trend == "up"
     if (net >= 5 or has_boom) and not ext_res["is_too_extended"] and (market_regime is None or market_regime.get("risk_mode") != "RISK_OFF"):
         verdict = "BUY"
@@ -103,13 +104,6 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
 
     winner = "Bull" if bull >= bear else "Bear"
     rationale = br[0] if winner == "Bull" and br else rr[0] if rr else "Technical momentum and market factors evaluated."
-    catalyst = br[1] if winner == "Bull" and len(br) > 1 else br[0] if br else "Positive analyst upside and momentum"
-
-    # 6. Risk Engine Parameters
-    risk_params = calculate_risk_parameters(evidence, active_positions=active_positions)
-
-    # 7. Data Quality Score
-    dq_score = calculate_data_quality(evidence)
 
     verdict_payload = {
         "symbol": symbol,
@@ -133,15 +127,12 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "data_quality_score": dq_score,
         "winner": winner,
         "why": rationale,
-        "catalyst": catalyst,
         "buy_zone": risk_params["buy_zone"],
         "target": risk_params["target_1_str"],
         "target_2": risk_params["target_2_str"],
         "stop_loss": risk_params["stop_loss_str"],
         "rr_ratio": risk_params["rr_ratio"],
         "invalidation": f"Daily close below {risk_params['stop_loss_str']}",
-        "kill_conditions": [f"Daily close below {risk_params['stop_loss_str']}", "Market Regime switches to RISK_OFF"],
-        "strategies": [boom_type] if boom_type != "NORMAL" else ["Momentum Watch"],
         "component_breakdown": {
             "technical": tech_comp,
             "rvol": vol_comp,
@@ -158,17 +149,11 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "range_52w": r,
         "analyst": a,
         "news": n,
-        "risk_params": risk_params,
-        "scores": {
-            "bull": {"score": bull, "reasons": br[:4]},
-            "bear": {"score": bear, "reasons": rr[:4]}
-        }
+        "risk_params": risk_params
     }
 
-    # 8. Signal Validation Gate
+    # 6. Signal Validation Gate
     validation = validate_signal(verdict_payload, evidence, market_regime, config)
-    
-    # Portfolio Concentration Override
     if risk_params["portfolio_concentration"]["is_blocked"]:
         validation["validated"] = False
         validation["status"] = "BUY BLOCKED"
@@ -180,5 +165,9 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
 
     if not validation["validated"] and verdict_payload["verdict"] == "BUY":
         verdict_payload["verdict"] = "WATCH"
+
+    # 7. Decision State Machine
+    dec_res = evaluate_trading_decision(evidence, verdict_payload, market_regime)
+    verdict_payload.update(dec_res)
 
     return verdict_payload

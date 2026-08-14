@@ -1,11 +1,9 @@
-from intraday_engine import calculate_intraday_score
-from swing_engine import calculate_swing_score
-from false_breakout_engine import evaluate_breakout_extension_and_validity
-
 def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
     """
     Ranks candidates across Intraday and Swing categories.
-    Enforces No-Forced-Signal Policy: returns 'NO HIGH-CONVICTION SETUP' if no candidate qualifies.
+    Enforces No-Forced-Signal Policy & No Contradictory UI State:
+    - top_pick is ONLY set if candidate decision_state == 'BUY NOW'.
+    - If buy_now candidates = 0, top_pick is None and summary is 'NO HIGH-CONVICTION BUY TODAY'.
     """
     if not verdicts_list:
         return {
@@ -14,8 +12,20 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
             "top_boom": None,
             "best_rr": None,
             "safest_setup": None,
-            "opportunities_summary": "NO HIGH-CONVICTION SETUP"
+            "buy_now_count": 0,
+            "confirmation_count": 0,
+            "watch_count": 0,
+            "avoid_count": 0,
+            "blocked_count": 0,
+            "opportunities_summary": "NO HIGH-CONVICTION BUY TODAY"
         }
+
+    # Count decisions
+    buy_now_list = [v for v in verdicts_list if v.get("decision_state") == "BUY NOW"]
+    confirmation_list = [v for v in verdicts_list if v.get("decision_state") == "BUY ON CONFIRMATION"]
+    watch_list = [v for v in verdicts_list if v.get("decision_state") == "WATCH"]
+    avoid_list = [v for v in verdicts_list if v.get("decision_state") == "AVOID"]
+    blocked_list = [v for v in verdicts_list if v.get("decision_state") == "BLOCKED"]
 
     # Filter Intraday candidates
     intraday_candidates = [
@@ -31,14 +41,15 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
     ]
     swing_candidates.sort(key=lambda x: x.get("swing_score", 0), reverse=True)
 
-    top_intraday = intraday_candidates[0] if intraday_candidates else None
-    top_swing = swing_candidates[0] if swing_candidates else None
+    # Only assign top pick if buy_now exists
+    top_intraday = intraday_candidates[0] if (intraday_candidates and intraday_candidates[0].get("decision_state") == "BUY NOW") else None
+    top_swing = swing_candidates[0] if (swing_candidates and swing_candidates[0].get("decision_state") == "BUY NOW") else None
 
     top_boom = max(verdicts_list, key=lambda x: x.get("boom_score", 0)) if verdicts_list else None
     best_rr = max(verdicts_list, key=lambda x: x.get("rr_ratio", 0)) if verdicts_list else None
     safest = max(verdicts_list, key=lambda x: x.get("data_quality_score", 0)) if verdicts_list else None
 
-    has_valid_opportunity = (top_intraday is not None) or (top_swing is not None)
+    has_buy_now = len(buy_now_list) > 0
 
     return {
         "top_intraday": top_intraday,
@@ -46,6 +57,11 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
         "top_boom": top_boom,
         "best_rr": best_rr,
         "safest_setup": safest,
-        "has_opportunity": has_valid_opportunity,
-        "opportunities_summary": "High conviction setups available" if has_valid_opportunity else "NO HIGH-CONVICTION SETUP"
+        "buy_now_count": len(buy_now_list),
+        "confirmation_count": len(confirmation_list),
+        "watch_count": len(watch_list),
+        "avoid_count": len(avoid_list),
+        "blocked_count": len(blocked_list),
+        "has_opportunity": has_buy_now,
+        "opportunities_summary": f"{len(buy_now_list)} BUY NOW setup(s) active" if has_buy_now else "NO HIGH-CONVICTION BUY TODAY"
     }

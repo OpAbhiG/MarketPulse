@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarketPulse V2 — Autonomous NSE Momentum & AI Signal Platform</title>
+  <title>MarketPulse V3 — Trading Decision Intelligence Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -18,14 +18,16 @@
       --text-muted: #94a3b8;
       --color-buy: #10b981;
       --color-buy-bg: #ecfdf5;
-      --color-watch: #f59e0b;
-      --color-watch-bg: #fffbeb;
+      --color-conf: #f59e0b;
+      --color-conf-bg: #fffbeb;
+      --color-watch: #3b82f6;
+      --color-watch-bg: #eff6ff;
       --color-avoid: #ef4444;
       --color-avoid-bg: #fef2f2;
-      --color-working: #3b82f6;
+      --color-blocked: #ea580c;
+      --color-blocked-bg: #fff7ed;
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
       --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
       --radius-sm: 8px;
       --radius-md: 14px;
       --radius-lg: 20px;
@@ -66,7 +68,7 @@
       text-decoration: none;
     }
     .brand-icon {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
       color: white;
       width: 36px;
       height: 36px;
@@ -76,11 +78,7 @@
       justify-content: center;
       font-weight: 900;
     }
-    .header-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
 
     .btn {
       height: 40px;
@@ -95,112 +93,77 @@
       gap: 6px;
       transition: all 0.2s ease;
     }
-    .btn-primary { background: #2563eb; color: white; }
-    .btn-primary:hover { background: #1d4ed8; }
+    .btn-primary { background: #059669; color: white; }
+    .btn-primary:hover { background: #047857; }
     .btn-secondary { background: #ffffff; border-color: var(--border-color); color: var(--text-primary); }
     .btn-secondary:hover { background: #f1f5f9; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .container {
-      max-width: 1400px;
-      margin: 24px auto;
-      padding: 0 24px;
-    }
+    .container { max-width: 1400px; margin: 24px auto; padding: 0 24px; }
 
-    /* Market Regime Header Bar */
-    .regime-bar {
-      background: #ffffff;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: var(--shadow-sm);
-    }
-    .regime-badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-weight: 800;
-      font-size: 12px;
-      letter-spacing: 0.04em;
-    }
-    .regime-STRONG_RISK_ON, .regime-RISK_ON { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .regime-NORMAL { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .regime-CAUTIOUS { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-    .regime-RISK_OFF { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-
-    /* KPIs Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-    .kpi-card {
-      background: #ffffff;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      box-shadow: var(--shadow-sm);
-    }
-    .kpi-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-    .kpi-value { font-size: 22px; font-weight: 800; margin: 4px 0 2px 0; color: var(--text-primary); }
-    .kpi-sub { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
-
-    /* Top Recommendations Showcase */
-    .opps-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .opp-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    /* Action Center Header */
+    .action-center {
+      background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
       border: 1.5px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 18px;
+      padding: 20px;
+      margin-bottom: 24px;
       box-shadow: var(--shadow-sm);
     }
+    .action-summary-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
 
-    /* Stepper Pipeline */
-    .pipeline {
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .counter-box {
       background: #ffffff;
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 16px;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: var(--shadow-sm);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
     }
-    .step-item {
+    .counter-box.buy-now { border-color: #a7f3d0; background: #ecfdf5; }
+    .counter-box.confirmation { border-color: #fde68a; background: #fffbeb; }
+    .counter-box.watch { border-color: #bfdbfe; background: #eff6ff; }
+    .counter-box.avoid { border-color: #fecaca; background: #fef2f2; }
+    .counter-box.blocked { border-color: #ffedd5; background: #fff7ed; }
+
+    /* Mode Toggles */
+    .filter-bar {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .toggle-group {
+      display: flex;
+      background: #e2e8f0;
+      padding: 3px;
+      border-radius: 10px;
+      gap: 2px;
+    }
+    .toggle-btn {
+      padding: 6px 14px;
+      border: none;
+      background: none;
       font-size: 12px;
       font-weight: 700;
-      color: var(--text-muted);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .step-dot {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #e2e8f0;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 800;
-    }
-    .step-item.active .step-dot { background: #2563eb; color: white; }
-    .step-item.completed .step-dot { background: #10b981; color: white; }
-    .step-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; }
+    .toggle-btn.active { background: #ffffff; color: var(--text-primary); box-shadow: var(--shadow-sm); }
 
-    /* Cards & Tables */
+    /* Card Layouts */
     .feed-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
@@ -210,44 +173,29 @@
       box-shadow: var(--shadow-sm);
     }
 
-    .verdict-row {
+    .decision-row {
       display: grid;
-      grid-template-columns: 160px 140px 140px 1fr 140px;
+      grid-template-columns: 160px 160px 140px 1fr 140px;
       gap: 16px;
       padding: 16px;
       border-bottom: 1px solid var(--border-color);
       align-items: center;
-      transition: background 0.15s;
     }
-    .verdict-row:hover { background: #f8fafc; }
-    .verdict-row:last-child { border-bottom: none; }
+    .decision-row:hover { background: #f8fafc; }
 
     .badge {
-      padding: 3px 8px;
-      border-radius: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
       font-size: 11px;
       font-weight: 800;
       display: inline-block;
     }
-    .badge.buy { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .badge.watch { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-    .badge.avoid { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-buy-now { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-confirmation { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-watch { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-avoid { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-blocked { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
 
-    /* Sector Heatmap */
-    .sector-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .sector-card {
-      background: #f8fafc;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    /* Modal Backdrop */
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -271,28 +219,6 @@
       padding: 24px;
     }
 
-    .modal-tabs {
-      display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-    }
-    .modal-tab-btn {
-      padding: 8px 16px;
-      border: none;
-      background: none;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    .modal-tab-btn.active {
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-
     .change.up { color: #10b981; font-weight: 700; }
     .change.down { color: #ef4444; font-weight: 700; }
   </style>
@@ -303,126 +229,86 @@
     <div class="header-inner">
       <a href="#" class="brand">
         <div class="brand-icon">M</div>
-        <span>MarketPulse V2</span>
+        <span>MarketPulse V3</span>
       </a>
       <div class="header-actions">
         <button class="btn btn-secondary" onclick="openWatchlistDrawer()">📋 Watchlist</button>
         <button class="btn btn-secondary" onclick="openBacktestModal()">🧪 Strategy Lab</button>
         <button class="btn btn-secondary" onclick="openPasteDrawer()">📋 Paste NSE Stocks</button>
-        <button class="btn btn-primary" id="startBtn" onclick="triggerStart()">🚀 Start Agents</button>
+        <button class="btn btn-primary" id="startBtn" onclick="triggerStart()">🚀 Start Scan</button>
       </div>
     </div>
   </header>
 
   <main class="container">
 
-    <!-- Market Regime 2.0 Bar -->
-    <section class="regime-bar" id="regimeBar">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:13px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">Market Regime 2.0:</span>
-        <span class="regime-badge regime-RISK_ON" id="regimeBadge">RISK_ON (82/100)</span>
-      </div>
-      <div style="display:flex; gap:16px; font-size:12px; font-weight:700;">
-        <span>NIFTY 50: <b id="niftyPrice">₹24,520.00</b> (<span class="change up" id="niftyChg">+0.45%</span>)</span>
-        <span>India VIX: <b id="vixVal">14.20</b></span>
-        <span>Trend: <b id="regimeTrend">BULLISH</b></span>
-      </div>
-    </section>
-
-    <!-- KPIs -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Universe</div>
-        <div class="kpi-value" id="kpiUniverse">0</div>
-        <div class="kpi-sub">Stocks Scanned</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Shortlisted</div>
-        <div class="kpi-value" id="kpiShortlisted">0</div>
-        <div class="kpi-sub">In AI Debate</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Intraday</div>
-        <div class="kpi-value" id="kpiIntraday" style="color:#2563eb;">0</div>
-        <div class="kpi-sub">Momentum Setups</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Swing</div>
-        <div class="kpi-value" id="kpiSwing" style="color:#7c3aed;">0</div>
-        <div class="kpi-sub">Trend Setups</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">BUY Signals</div>
-        <div class="kpi-value" id="kpiBuys" style="color:var(--color-buy);">0</div>
-        <div class="kpi-sub">Validated Setups</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Top Pick</div>
-        <div class="kpi-value" id="kpiTop">—</div>
-        <div class="kpi-sub" id="kpiTopSub">Highest Rank</div>
-      </div>
-    </section>
-
-    <!-- Top Recommendations Showcase -->
-    <section class="opps-grid">
-      <div class="opp-card">
-        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#2563eb; margin-bottom:6px;">🏆 TOP INTRADAY RECOMMENDATION</div>
-        <div id="topIntradayCard">
-          <div style="font-size:13px; color:var(--text-muted);">No high-conviction intraday setup currently active.</div>
+    <!-- Action Center Top Header -->
+    <section class="action-center">
+      <div class="action-summary-bar">
+        <div>
+          <span style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--text-muted);">MarketPulse Action Center</span>
+          <h2 style="margin:2px 0 0 0; font-size:20px; font-weight:900;" id="actionSummary">NO HIGH-CONVICTION BUY TODAY</h2>
+        </div>
+        <div style="text-align:right; font-size:12px; font-weight:700;">
+          <div>Market Regime: <b id="regimeText">NORMAL (65/100)</b></div>
+          <div style="color:var(--text-muted);">NIFTY 50: <b id="niftyPrice">₹24,520.00</b> | VIX: <b id="vixVal">14.20</b></div>
         </div>
       </div>
-      <div class="opp-card">
-        <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:#7c3aed; margin-bottom:6px;">🏆 TOP SWING RECOMMENDATION</div>
-        <div id="topSwingCard">
-          <div style="font-size:13px; color:var(--text-muted);">No high-conviction swing setup currently active.</div>
+
+      <div class="counter-grid">
+        <div class="counter-box buy-now">
+          <div style="font-size:11px; font-weight:800; color:#047857;">🟢 BUY NOW</div>
+          <div style="font-size:22px; font-weight:900; color:#047857;" id="cntBuyNow">0</div>
+        </div>
+        <div class="counter-box confirmation">
+          <div style="font-size:11px; font-weight:800; color:#b45309;">🟡 CONFIRMATION</div>
+          <div style="font-size:22px; font-weight:900; color:#b45309;" id="cntConf">0</div>
+        </div>
+        <div class="counter-box watch">
+          <div style="font-size:11px; font-weight:800; color:#1d4ed8;">🔵 WATCH</div>
+          <div style="font-size:22px; font-weight:900; color:#1d4ed8;" id="cntWatch">0</div>
+        </div>
+        <div class="counter-box avoid">
+          <div style="font-size:11px; font-weight:800; color:#b91c1c;">🔴 AVOID</div>
+          <div style="font-size:22px; font-weight:900; color:#b91c1c;" id="cntAvoid">0</div>
+        </div>
+        <div class="counter-box blocked">
+          <div style="font-size:11px; font-weight:800; color:#c2410c;">🟠 BLOCKED</div>
+          <div style="font-size:22px; font-weight:900; color:#c2410c;" id="cntBlocked">0</div>
         </div>
       </div>
     </section>
 
-    <!-- Pipeline Stepper -->
-    <section class="pipeline">
-      <div class="step-item" id="step-scout"><span class="step-dot">1</span>Scout</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-technician"><span class="step-dot">2</span>Technician</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-fundamentalist"><span class="step-dot">3</span>Fundamentalist</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-newsdesk"><span class="step-dot">4</span>Newsdesk</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-debate"><span class="step-dot">5</span>Debate</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-judge"><span class="step-dot">6</span>Judge</div>
-      <div class="step-line"></div>
-      <div class="step-item" id="step-messenger"><span class="step-dot">7</span>Messenger</div>
-    </section>
+    <!-- Filters & Mode Switch -->
+    <div class="filter-bar">
+      <div class="toggle-group">
+        <button class="toggle-btn active" onclick="setMode('INTRADAY', this)">⚡ INTRADAY (5m)</button>
+        <button class="toggle-btn" onclick="setMode('SWING', this)">📈 SWING (Daily)</button>
+      </div>
 
-    <!-- Top Blocked Opportunities Panel -->
-    <div class="feed-card" id="blockedSection" style="display:none; background:#fef2f2; border-color:#fecaca;">
+      <div class="toggle-group">
+        <button class="toggle-btn active" onclick="setFilter('ALL', this)">ALL</button>
+        <button class="toggle-btn" onclick="setFilter('BUY NOW', this)">🟢 BUY NOW</button>
+        <button class="toggle-btn" onclick="setFilter('BUY ON CONFIRMATION', this)">🟡 CONFIRMATION</button>
+        <button class="toggle-btn" onclick="setFilter('WATCH', this)">🔵 WATCH</button>
+        <button class="toggle-btn" onclick="setFilter('AVOID', this)">🔴 AVOID</button>
+      </div>
+    </div>
+
+    <!-- 🔴 STOCKS TO AVOID Section -->
+    <div class="feed-card" id="avoidPanel" style="display:none; background:#fef2f2; border-color:#fecaca;">
       <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; color:#b91c1c; text-transform:uppercase;">
-        ⚠️ Top Blocked Opportunities (Risk & Quality Controls)
+        🔴 Stocks to Avoid (Explicit Rejection Rationale)
       </h3>
-      <div id="blockedList"></div>
+      <div id="avoidList"></div>
     </div>
 
-    <!-- Sector Heatmap Section -->
+    <!-- Main Stock Verdict Cards -->
     <div class="feed-card">
-      <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:var(--text-secondary);">
-        🗺️ NSE Sector Relative Strength Heatmap
-      </h3>
-      <div class="sector-grid" id="sectorGrid">
-        <div style="color:var(--text-muted); font-size:12px;">Loading sector heatmap data...</div>
-      </div>
-    </div>
-
-    <!-- Verdicts Feed -->
-    <div class="feed-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:16px; font-weight:800;">Latest Intraday & Swing Stock Verdicts</h3>
-        <span style="font-size:12px; color:var(--text-muted);" id="runMeta">Idle</span>
-      </div>
+      <h3 style="margin:0 0 16px 0; font-size:16px; font-weight:800;">NSE Stock Trading Decision Cards</h3>
       <div id="feed">
         <div style="text-align:center; padding:40px; color:var(--text-muted); font-size:13px;">
-          Press "🚀 Start Agents" to run live NSE stock analysis pipeline.
+          Press "🚀 Start Scan" to evaluate live NSE stock setups.
         </div>
       </div>
     </div>
@@ -440,11 +326,11 @@
     </div>
   </div>
 
-  <!-- Watchlist Modal Drawer -->
+  <!-- Watchlist Modal -->
   <div class="modal-backdrop" id="watchlistBackdrop" onclick="if(event.target === this) closeWatchlistDrawer();">
     <div class="modal" style="max-width:540px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;">📋 My Custom Watchlist</h3>
+        <h3 style="margin:0;">📋 Custom Watchlist</h3>
         <button onclick="closeWatchlistDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
       <div style="display:flex; gap:8px; margin-bottom:16px;">
@@ -459,13 +345,11 @@
   <div class="modal-backdrop" id="backtestBackdrop" onclick="if(event.target === this) closeBacktestModal();">
     <div class="modal" style="max-width:720px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;">🧪 Strategy Lab 2.0 — Backtesting & Monte Carlo</h3>
+        <h3 style="margin:0;">🧪 Strategy Lab 2.0 — Realistic Costs & Monte Carlo</h3>
         <button onclick="closeBacktestModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
-      <div style="display:flex; gap:12px; margin-bottom:16px;">
-        <button class="btn btn-primary" onclick="runBacktestSimulation()">Run Momentum Backtest</button>
-      </div>
-      <div id="backtestResults">Click "Run Momentum Backtest" to test historical strategy performance and Monte Carlo drawdown distribution.</div>
+      <button class="btn btn-primary" style="margin-bottom:16px;" onclick="runBacktestSimulation()">Run Backtest (Incl. NSE STT & Slippage)</button>
+      <div id="backtestResults">Click button to run strategy backtest with transaction costs.</div>
     </div>
   </div>
 
@@ -473,16 +357,18 @@
   <div class="modal-backdrop" id="pasteBackdrop" onclick="if(event.target === this) closePasteDrawer();">
     <div class="modal" style="max-width:600px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;">📋 Paste NSE Stocks Text or Tables</h3>
+        <h3 style="margin:0;">📋 Paste NSE Stocks Text</h3>
         <button onclick="closePasteDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
-      <textarea id="pasteInput" placeholder="Paste raw text, copied NSE tables, or comma-separated symbols..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border-color); border-radius:8px; font-size:13px; font-family:monospace; margin-bottom:12px;"></textarea>
-      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="processPastedText()">🚀 Analyze Pasted Stocks</button>
+      <textarea id="pasteInput" placeholder="Paste raw text or symbols..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border-color); border-radius:8px; font-size:13px; font-family:monospace; margin-bottom:12px;"></textarea>
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="processPastedText()">🚀 Analyze Pasted Symbols</button>
     </div>
   </div>
 
   <script>
     let localVerdicts = [];
+    let currentFilter = 'ALL';
+    let currentMode = 'INTRADAY';
 
     async function pollStatus() {
       try {
@@ -492,147 +378,119 @@
       } catch(e) {}
     }
 
-    async function fetchSectors() {
-      try {
-        const res = await fetch('/sectors');
-        const d = await res.json();
-        if (d.ok && d.sectors) renderSectors(d.sectors);
-      } catch(e) {}
+    function setFilter(f, btn) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-bar .toggle-group:nth-child(2) .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFeed();
     }
 
-    function renderSectors(sectors) {
-      document.getElementById('sectorGrid').innerHTML = sectors.map(sec => `
-        <div class="sector-card">
-          <div style="display:flex; justify-content:space-between; font-weight:800; font-size:12px;">
-            <span>${sec.name}</span>
-            <span class="${sec.return_20d >= 0 ? 'up' : 'down'}">${sec.return_20d >= 0 ? '+' : ''}${sec.return_20d}%</span>
+    function setMode(m, btn) {
+      currentMode = m;
+      document.querySelectorAll('.filter-bar .toggle-group:nth-child(1) .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderFeed();
+    }
+
+    function render(s) {
+      const dec = s.decision_counts || {};
+      document.getElementById('actionSummary').textContent = dec.summary || "NO HIGH-CONVICTION BUY TODAY";
+      document.getElementById('cntBuyNow').textContent = dec.buy_now || 0;
+      document.getElementById('cntConf').textContent = dec.confirmation || 0;
+      document.getElementById('cntWatch').textContent = dec.watch || 0;
+      document.getElementById('cntAvoid').textContent = dec.avoid || 0;
+      document.getElementById('cntBlocked').textContent = dec.blocked || 0;
+
+      if (s.market_regime) {
+        document.getElementById('regimeText').textContent = `${s.market_regime.risk_mode} (${s.market_regime.score}/100)`;
+        document.getElementById('niftyPrice').textContent = `₹${s.market_regime.nifty_price?.toLocaleString('en-IN') || '24,520.00'}`;
+        document.getElementById('vixVal').textContent = s.market_regime.vix || '14.20';
+      }
+
+      // Avoid Section
+      const avoidList = s.avoid_verdicts || [];
+      const avoidPanel = document.getElementById('avoidPanel');
+      if (avoidList.length > 0) {
+        avoidPanel.style.display = 'block';
+        document.getElementById('avoidList').innerHTML = avoidList.map(a => `
+          <div style="font-size:12px; font-weight:700; color:#b91c1c; margin-bottom:6px;">
+            <b>${a.symbol}</b> (Master Score ${a.marketpulse_score}/100): ${(a.avoid_reasons || []).join(' | ') || 'Weak technical structure'}
           </div>
-          <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">20D Rank: #${sec.momentum_rank}</div>
+        `).join('');
+      } else {
+        avoidPanel.style.display = 'none';
+      }
+
+      localVerdicts = s.verdicts || [];
+      renderFeed();
+    }
+
+    function renderFeed() {
+      const feedEl = document.getElementById('feed');
+      let filtered = localVerdicts;
+      if (currentFilter !== 'ALL') {
+        filtered = filtered.filter(x => x.decision_state === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        feedEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No stocks match filter "${currentFilter}".</div>`;
+        return;
+      }
+
+      feedEl.innerHTML = filtered.slice().reverse().map(v => `
+        <div class="decision-row" onclick="openDetailModal('${v.symbol}')" style="cursor:pointer;">
+          <div>
+            <span style="font-weight:800; font-size:16px;">${v.symbol}</span>
+            <div style="font-size:11px; color:var(--text-muted);">${v.sector || 'NSE Equity'}</div>
+          </div>
+          <div>
+            <span class="badge badge-${(v.decision_state || 'AVOID').toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || v.decision_state}</span>
+          </div>
+          <div>
+            <div style="font-weight:800; font-size:13px;">Master: ${v.marketpulse_score}/100</div>
+            <div style="font-size:10px; color:#2563eb; font-weight:700;">Intraday: ${v.intraday_score}/100</div>
+            <div style="font-size:10px; color:#7c3aed; font-weight:700;">Swing: ${v.swing_score}/100</div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:#047857;">Why Buy: ${(v.why_buy || [])[0] || '—'}</div>
+            <div style="font-size:11px; font-weight:700; color:#b45309;">Caution: ${(v.why_not_buy || [])[0] || '—'}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800; font-size:14px;">₹${v.price ?? '—'}</div>
+            <div style="font-size:11px; font-weight:700; color:#2563eb;">Trigger: ${v.trigger_price || '—'}</div>
+          </div>
         </div>
       `).join('');
     }
 
-    function render(s) {
-      document.getElementById('kpiUniverse').textContent = s.kpis.universe || 0;
-      document.getElementById('kpiShortlisted').textContent = s.kpis.shortlisted || 0;
-      document.getElementById('kpiIntraday').textContent = s.kpis.intraday || 0;
-      document.getElementById('kpiSwing').textContent = s.kpis.swing || 0;
-      document.getElementById('kpiBuys').textContent = s.kpis.buy_signals || 0;
-      document.getElementById('kpiTop').textContent = s.kpis.top_intraday?.symbol || s.kpis.top_swing?.symbol || '—';
-
-      // Market Regime
-      if (s.market_regime) {
-        const r = s.market_regime;
-        document.getElementById('regimeBadge').textContent = `${r.risk_mode} (${r.score}/100)`;
-        document.getElementById('regimeBadge').className = `regime-badge regime-${r.risk_mode}`;
-        document.getElementById('niftyPrice').textContent = `₹${r.nifty_price?.toLocaleString('en-IN') || '24,520.00'}`;
-        document.getElementById('niftyChg').textContent = `${r.nifty_day_change_pct >= 0 ? '+' : ''}${r.nifty_day_change_pct}%`;
-        document.getElementById('vixVal').textContent = r.vix || '14.20';
-        document.getElementById('regimeTrend').textContent = r.trend || 'BULLISH';
-      }
-
-      // Top Opportunities
-      const opps = s.opportunities || {};
-      if (opps.top_intraday) {
-        const ti = opps.top_intraday;
-        document.getElementById('topIntradayCard').innerHTML = `
-          <div style="font-weight:800; font-size:16px;">${ti.symbol} — ₹${ti.price} (<span class="${ti.day_change_pct >= 0 ? 'up':'down'}">${ti.day_change_pct}%</span>)</div>
-          <div style="font-size:12px; font-weight:700; color:#2563eb; margin:2px 0;">Intraday Score: ${ti.intraday_score}/100 | ${ti.intraday_setup}</div>
-          <div style="font-size:11px; color:var(--text-secondary);">Buy Zone: ${ti.buy_zone} | Target: ${ti.target} | SL: ${ti.stop_loss}</div>
-        `;
-      }
-      if (opps.top_swing) {
-        const ts = opps.top_swing;
-        document.getElementById('topSwingCard').innerHTML = `
-          <div style="font-weight:800; font-size:16px;">${ts.symbol} — ₹${ts.price} (<span class="${ts.day_change_pct >= 0 ? 'up':'down'}">${ts.day_change_pct}%</span>)</div>
-          <div style="font-size:12px; font-weight:700; color:#7c3aed; margin:2px 0;">Swing Score: ${ts.swing_score}/100 | ${ts.swing_setup}</div>
-          <div style="font-size:11px; color:var(--text-secondary);">Buy Zone: ${ts.buy_zone} | Target: ${ts.target} | SL: ${ts.stop_loss}</div>
-        `;
-      }
-
-      // Top Blocked Section
-      const blocked = s.blocked_verdicts || [];
-      const blockedSec = document.getElementById('blockedSection');
-      if (blocked.length > 0) {
-        blockedSec.style.display = 'block';
-        document.getElementById('blockedList').innerHTML = blocked.map(b => `
-          <div style="font-size:12px; margin-bottom:4px; font-weight:600; color:#991b1b;">
-            • <b>${b.symbol}</b> (Score ${b.marketpulse_score}/100) — Blocked: ${b.validation_reason}
-          </div>
-        `).join('');
-      } else {
-        blockedSec.style.display = 'none';
-      }
-
-      // Feed
-      localVerdicts = s.verdicts || [];
-      const feedEl = document.getElementById('feed');
-      if (localVerdicts.length > 0) {
-        feedEl.innerHTML = localVerdicts.slice().reverse().map(v => `
-          <div class="verdict-row" onclick="openDebateModal('${v.symbol}')" style="cursor:pointer;">
-            <div>
-              <span style="font-weight:800; font-size:15px;">${v.symbol}</span>
-              <div style="font-size:11px; color:var(--text-muted);">${v.cap_segment} cap</div>
-            </div>
-            <div>
-              <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
-              <div style="font-size:10px; font-weight:700; color:var(--text-secondary); margin-top:2px;">
-                ${v.validated ? '✓ Validated' : '⚠ Blocked'}
-              </div>
-            </div>
-            <div>
-              <div style="font-weight:800; font-size:13px;">Score: ${v.marketpulse_score}/100</div>
-              <div style="font-size:10px; color:#2563eb; font-weight:700;">Intraday: ${v.intraday_score}/100</div>
-              <div style="font-size:10px; color:#7c3aed; font-weight:700;">Swing: ${v.swing_score}/100</div>
-            </div>
-            <div>
-              <div style="font-size:12px; color:var(--text-secondary); line-height:1.3;">${v.why || '—'}</div>
-              ${v.buy_zone ? `<div style="font-size:11px; font-weight:700; color:#047857; margin-top:4px;">Buy Zone: ${v.buy_zone} | Target: ${v.target} | SL: ${v.stop_loss}</div>` : ''}
-            </div>
-            <div style="text-align:right;">
-              <div style="font-weight:800; font-size:14px;">₹${v.price ?? '—'}</div>
-              <div class="${v.day_change_pct >= 0 ? 'up' : 'down'}" style="font-size:11px;">
-                ${v.day_change_pct == null ? '' : (v.day_change_pct > 0 ? '+' : '') + v.day_change_pct + '%'}
-              </div>
-            </div>
-          </div>
-        `).join('');
-      }
-    }
-
-    function openDebateModal(symbol) {
+    function openDetailModal(symbol) {
       const v = localVerdicts.find(x => x.symbol === symbol);
       if (!v) return;
 
       document.getElementById('modalTitle').innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:20px; font-weight:800;">${v.symbol}</span>
-          <span class="badge ${v.verdict.toLowerCase()}">${v.verdict}</span>
+          <span class="badge badge-${(v.decision_state || 'AVOID').toLowerCase().replace(/\s+/g, '-')}">${v.decision_badge || v.decision_state}</span>
           <span style="font-size:13px; color:var(--text-muted);">Master Score: ${v.marketpulse_score}/100</span>
         </div>
       `;
 
-      const comp = v.component_breakdown || {};
-
       document.getElementById('modalBody').innerHTML = `
-        <div style="margin-bottom:20px;">
-          <div id="tv_chart_container" style="height:400px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
+        <div style="margin-bottom:16px;">
+          <div id="tv_chart_container" style="height:350px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--border-color);"></div>
         </div>
-        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:16px; margin-bottom:16px;">
-          <h4 style="margin:0 0 8px 0; font-size:14px;">📊 Evidence Explorer — Master Score Component Breakdown</h4>
-          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; font-size:11px; text-align:center;">
-            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Technical: <b>${comp.technical || 0}/20</b></div>
-            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">RVOL: <b>${comp.rvol || 0}/15</b></div>
-            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Breakout: <b>${comp.breakout || 0}/15</b></div>
-            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Trend: <b>${comp.trend || 0}/10</b></div>
-            <div style="background:#fff; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">Rel Strength: <b>${comp.relative_strength || 0}/10</b></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:12px;">
+          <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:12px; border-radius:8px;">
+            <h4 style="margin:0 0 6px 0; color:#047857;">WHY BUY THIS SETUP?</h4>
+            ${(v.why_buy || []).map(w => `<div>${w}</div>`).join('')}
+          </div>
+          <div style="background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:8px;">
+            <h4 style="margin:0 0 6px 0; color:#b45309;">WHY NOT BUY YET / CAUTION?</h4>
+            ${(v.why_not_buy || []).map(w => `<div>${w}</div>`).join('')}
           </div>
         </div>
-        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:12px; padding:16px;">
-          <h4 style="margin:0 0 8px 0; font-size:14px;">Judge Final Verdict</h4>
-          <p style="font-size:13px; color:var(--text-secondary); margin:0 0 8px 0;">${v.why || ''}</p>
-          <div style="font-size:12px; font-weight:700; color:#047857;">Buy Zone: ${v.buy_zone || '—'} | Target 1: ${v.target || '—'} | Target 2: ${v.target_2 || '—'} | Stop Loss: ${v.stop_loss || '—'}</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">Analysis only. No trade was placed. Not investment advice.</div>
+        <div style="margin-top:14px; background:#f8fafc; border:1px solid var(--border-color); padding:12px; border-radius:8px; font-size:12px; font-weight:700;">
+          Trigger: BUY ONLY ABOVE ${v.trigger_price || '—'} | Invalidation: Below ${v.invalidation_price || '—'} | Target 1: ${v.target || '—'} | Stop Loss: ${v.stop_loss || '—'}
         </div>
       `;
 
@@ -688,21 +546,21 @@
     }
 
     async function runBacktestSimulation() {
-      document.getElementById('backtestResults').innerHTML = "Running backtest & Monte Carlo simulations...";
+      document.getElementById('backtestResults').innerHTML = "Running backtest with NSE transaction charges...";
       const res = await fetch('/backtest', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({strategy_name: "Momentum Breakout"}) });
       const d = await res.json();
       if (d.ok && d.backtest) {
         const bt = d.backtest;
         document.getElementById('backtestResults').innerHTML = `
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px;">
-            <div style="font-weight:800; font-size:15px; margin-bottom:8px;">Strategy: ${bt.strategy_name}</div>
-            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; font-size:12px; text-align:center; margin-bottom:12px;">
+            <div style="font-weight:800; font-size:15px; margin-bottom:4px;">Strategy: ${bt.strategy_name}</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">${bt.fee_structure}</div>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; font-size:12px; text-align:center;">
               <div style="background:#fff; padding:8px; border-radius:6px;">Win Rate: <b>${bt.win_rate}%</b></div>
               <div style="background:#fff; padding:8px; border-radius:6px;">Profit Factor: <b>${bt.profit_factor}</b></div>
               <div style="background:#fff; padding:8px; border-radius:6px;">Expectancy: <b>${bt.expectancy}%</b></div>
               <div style="background:#fff; padding:8px; border-radius:6px;">CAGR: <b>${bt.cagr}%</b></div>
             </div>
-            <div style="font-size:12px; font-weight:700; color:#2563eb;">Walk-Forward Overfit Risk: ${bt.walk_forward?.overfit_risk || 'LOW'} | Monte Carlo 95th DD: ${bt.monte_carlo?.dd_95th_percentile || 7.5}%</div>
           </div>
         `;
       }
@@ -721,16 +579,15 @@
 
     async function triggerStart(customSyms) {
       document.getElementById('startBtn').disabled = true;
-      document.getElementById('startBtn').textContent = "Running Analysis...";
+      document.getElementById('startBtn').textContent = "Running Scan...";
       await fetch('/start', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({symbols: customSyms}) });
       setTimeout(() => {
         document.getElementById('startBtn').disabled = false;
-        document.getElementById('startBtn').textContent = "🚀 Start Agents";
+        document.getElementById('startBtn').textContent = "🚀 Start Scan";
       }, 5000);
     }
 
     setInterval(pollStatus, 3000);
-    fetchSectors();
     pollStatus();
   </script>
 </body>

@@ -12,6 +12,7 @@ import database
 from market_regime import evaluate_market_regime
 from sector_engine import fetch_sector_heatmaps
 from opportunity_engine import rank_market_opportunities
+from decision_engine import summarize_decisions
 from backtest import run_strategy_backtest
 from performance import calculate_system_performance, get_confidence_calibration, get_agent_performance_metrics
 from telegram import send_telegram_alert, format_telegram_signal_message, format_telegram_preboom_message
@@ -32,9 +33,11 @@ RUN_STATE = {
     "completed_at": None,
     "verdicts": [],
     "blocked_verdicts": [],
+    "avoid_verdicts": [],
     "market_regime": None,
     "sectors": [],
     "opportunities": {},
+    "decision_counts": {"buy_now": 0, "confirmation": 0, "watch": 0, "avoid": 0, "blocked": 0, "summary": "NO HIGH-CONVICTION BUY TODAY"},
     "kpis": {"universe": 0, "shortlisted": 0, "intraday": 0, "swing": 0, "buy_signals": 0, "top_intraday": None, "top_swing": None},
     "log": [],
     "agents": {
@@ -175,10 +178,11 @@ def background_analysis_pipeline(custom_symbols=None):
             "active_step": "scout",
             "verdicts": [],
             "blocked_verdicts": [],
+            "avoid_verdicts": [],
             "log": []
         })
 
-    add_log(f"Starting V2 analysis pipeline run ID: {run_id}")
+    add_log(f"Starting V3 decision analysis pipeline run ID: {run_id}")
 
     regime = evaluate_market_regime()
     sectors = fetch_sector_heatmaps()
@@ -210,22 +214,23 @@ def background_analysis_pipeline(custom_symbols=None):
         RUN_STATE["agents"]["scout"]["stat2"] = len(evidences)
         RUN_STATE["agents"]["scout"]["status"] = "done"
 
-    # Step 2-6: Technician, Fundamentalist, Newsdesk, Debate, Judge, Risk Engine
-    add_log("Step 2-6/7: Intraday/Swing debate, Risk Engine & Validation...")
+    # Step 2-6: Technician, Fundamentalist, Newsdesk, Debate, Judge, Decision Engine
+    add_log("Step 2-6/7: Intraday/Swing debate & Master Decision Engine...")
     verdicts = []
     blocked_verdicts = []
-    buy_signals = 0
+    avoid_verdicts = []
 
     for ev in evidences:
         v = scoring.deterministic_evaluate(ev, market_regime=regime, active_positions=verdicts)
         verdicts.append(v)
         database.save_verdict(run_id, v)
-        if not v.get("validated"):
+        if v.get("decision_state") == "BLOCKED":
             blocked_verdicts.append(v)
-        if v.get("verdict") == "BUY" and v.get("validated"):
-            buy_signals += 1
+        elif v.get("decision_state") == "AVOID":
+            avoid_verdicts.append(v)
 
     opps = rank_market_opportunities(verdicts)
+    dec_counts = summarize_decisions(verdicts)
 
     # Step 7: Messenger (Telegram)
     add_log("Step 7/7: Messenger Telegram pre-BOOM & signal validation...")
@@ -238,13 +243,9 @@ def background_analysis_pipeline(custom_symbols=None):
 
     if bot_token and chat_id:
         for v in verdicts:
-            if v.get("boom_type") == "EARLY BOOM":
-                msg = format_telegram_preboom_message(v)
-                res = send_telegram_alert(bot_token, chat_id, msg, symbol=v.get("symbol"), signal_type="PRE-BOOM WATCH")
-                if res.get("sent"): sent_count += 1
-            elif v.get("validated") and v.get("verdict") == "BUY":
+            if v.get("decision_state") == "BUY NOW":
                 msg = format_telegram_signal_message(v, mode="SWING")
-                res = send_telegram_alert(bot_token, chat_id, msg, symbol=v.get("symbol"), signal_type="BUY SIGNAL")
+                res = send_telegram_alert(bot_token, chat_id, msg, symbol=v.get("symbol"), signal_type="BUY NOW")
                 if res.get("sent"): sent_count += 1
 
     with STATE_LOCK:
@@ -256,13 +257,15 @@ def background_analysis_pipeline(custom_symbols=None):
             "completed_at": datetime.now().isoformat(),
             "verdicts": verdicts,
             "blocked_verdicts": blocked_verdicts,
+            "avoid_verdicts": avoid_verdicts,
             "opportunities": opps,
+            "decision_counts": dec_counts,
             "kpis": {
                 "universe": len(evidences),
                 "shortlisted": len(evidences),
                 "intraday": len([v for v in verdicts if v.get("intraday_score",0) >= 70]),
                 "swing": len([v for v in verdicts if v.get("swing_score",0) >= 70]),
-                "buy_signals": buy_signals,
+                "buy_signals": dec_counts["buy_now"],
                 "top_intraday": opps.get("top_intraday"),
                 "top_swing": opps.get("top_swing")
             }
@@ -276,11 +279,11 @@ def background_analysis_pipeline(custom_symbols=None):
             "universe_count": len(evidences),
             "shortlisted_count": len(evidences),
             "boom_count": len([v for v in verdicts if v.get("boom_score", 0) >= 70]),
-            "buy_count": buy_signals,
+            "buy_count": dec_counts["buy_now"],
             "status": "COMPLETED"
         })
 
-    add_log("V2 pipeline cycle completed successfully!")
+    add_log("V3 decision pipeline cycle completed successfully!")
 
 @app.route("/start", methods=["POST"])
 @app.route("/scan", methods=["POST"])
