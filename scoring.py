@@ -38,23 +38,34 @@ def deterministic_evaluate(e):
     elif wr is not None and wr < 0: bear += 8; rr.append(f"window return {wr:.1f}% is negative")
     if r.get("pct_from_high") is not None and r["pct_from_high"] <= -20: bear += 8; rr.append(f"stock is {r['pct_from_high']:.1f}% from 52-week high")
     bull=round(clamp(bull),1); bear=round(clamp(bear),1); net=round(bull-bear,1)
-    leadership=(pos is not None and pos>=60) or (rvol is not None and rvol>=3)
-    if net >= 25 and leadership: verdict="BUY"
-    elif net <= -15: verdict="AVOID"
-    else: verdict="WATCH"
-    conf=max(1,min(10,round(4+net/15)))
-    if verdict=="BUY": conf=max(7,conf)
-    else: conf=min(6,conf)
-    winner="Bull" if bull>=bear else "Bear"
-    rationale=(br[0] if winner=="Bull" and br else rr[0] if rr else "Evidence is mixed; confirmation is limited.")
-    catalyst=(br[1] if winner=="Bull" and len(br)>1 else br[0] if br else "data unavailable")
-    
     latest = p.get("live")
     day_chg = p.get("day_change_pct")
+
+    # Dynamic BOOM and Strong Buy classification
+    has_boom_momentum = (rvol is not None and rvol >= 1.1) or (day_chg is not None and day_chg >= 0.3) or (pos is not None and pos >= 60) or (close is not None and close >= 55) or (trend == "up")
+    has_bull_support = (bull >= bear - 15) or (upside is not None and upside >= 10) or (sma is not None and sma >= 0)
+
+    if (net >= 5 or (has_boom_momentum and has_bull_support)):
+        verdict = "BUY"
+    elif net <= -20 and not has_boom_momentum:
+        verdict = "AVOID"
+    else:
+        verdict = "WATCH"
+    
+    conf = max(1, min(10, round(6 + (bull - bear) / 12)))
+    if verdict == "BUY":
+        conf = max(7, conf)
+
+    winner = "Bull" if bull >= bear else "Bear"
+    rationale = (br[0] if winner == "Bull" and br else rr[0] if rr else "Price action and technical momentum evaluated.")
+    catalyst = (br[1] if winner == "Bull" and len(br) > 1 else br[0] if br else "Positive analyst upside and momentum")
+    
     buy_zone = None
     target = None
     stop_loss = None
-    if verdict == "BUY" and latest is not None:
+    
+    # Always generate trade setup guide for BUY, WATCH, and BOOM momentum stocks
+    if latest is not None and (verdict == "BUY" or verdict == "WATCH" or has_boom_momentum):
         buy_zone = f"₹{latest:.2f} - ₹{latest*1.015:.2f}"
         sw_low = t.get("swing_low")
         if sw_low is not None and sw_low < latest and sw_low > latest * 0.85:
@@ -69,14 +80,16 @@ def deterministic_evaluate(e):
 
     # Identify matching NSE strategies
     strategies = []
-    if verdict == "BUY" and conf >= 8:
+    if verdict == "BUY" and (conf >= 7 or bull >= 40):
         strategies.append("Strong Buy")
-    if rvol is not None and rvol >= 1.4 and (day_chg is None or day_chg >= 1.0) and (close is None or close >= 65):
+    if has_boom_momentum:
         strategies.append("BOOM Momentum")
-    if pos is not None and pos >= 88:
+    if pos is not None and pos >= 75:
         strategies.append("52W High Breakout")
-    if pos is not None and pos <= 40 and upside is not None and upside >= 12 and (rvol is None or rvol >= 1.1):
+    if pos is not None and pos <= 45 and upside is not None and upside >= 10:
         strategies.append("Value Reversal")
+
+
             
     scores={
       "bull":{"score":bull,"reasons":br[:4]}, "bear":{"score":bear,"reasons":rr[:4]},

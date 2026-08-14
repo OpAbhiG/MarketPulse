@@ -1069,9 +1069,13 @@
         <h2>Latest verdicts</h2>
         <div class="hint" id="runMeta">Idle · live engine config</div>
       </div>
+
+      <!-- Live Booming Stocks Category Showcase -->
+      <div id="boomingSection" style="display:none;"></div>
       
       <!-- Interactive filters bar -->
       <div class="filter-bar">
+
         <input type="text" id="searchBar" class="search-input" placeholder="Search symbol, name, or strategy...">
         <div class="filter-group">
           <select id="capFilter" class="select" style="height:40px; font-size:12px;">
@@ -1970,7 +1974,53 @@
 
       // Verdicts list
       localVerdicts = s.verdicts || [];
+
+      // Render Booming & Strong Buy Category Showcase
+      const boomingStocks = localVerdicts.filter(v => {
+        const strats = (v.strategies || []).join(' ');
+        return strats.includes('BOOM') || strats.includes('Strong') || v.verdict === 'BUY';
+      });
+
+      const boomingEl = document.getElementById('boomingSection');
+      if (boomingEl && boomingStocks.length > 0) {
+        boomingEl.style.display = 'block';
+        boomingEl.innerHTML = `
+          <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1.5px solid #fed7aa; border-radius: 16px; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="margin:0; font-size:15px; font-weight:800; color:#c2410c; display:flex; align-items:center; gap:8px;">
+                🔥 Live Booming Stocks & Strong Buy Opportunities (${boomingStocks.length})
+              </h3>
+              <span style="font-size:11px; font-weight:700; color:#9a3412;">Auto-Scanned from NSE</span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:12px;">
+              ${boomingStocks.map(b => `
+                <div style="background:#ffffff; border:1px solid #ffedd5; border-radius:12px; padding:12px; cursor:pointer; transition:all 0.2s;" onclick="openDebateModal('${escapeHtml(b.symbol)}')">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-weight:800; font-size:14px; color:#9a3412;">${escapeHtml(b.symbol)}</span>
+                    <span class="badge ${b.verdict.toLowerCase()}">${escapeHtml(b.verdict)}</span>
+                  </div>
+                  <div style="font-size:13px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+                    ₹${b.price ?? '—'} 
+                    <span class="${b.day_change_pct >= 0 ? 'up' : 'down'}" style="font-size:11px; margin-left:4px;">
+                      ${b.day_change_pct == null ? '' : (b.day_change_pct > 0 ? '+' : '') + b.day_change_pct + '%'}
+                    </span>
+                  </div>
+                  ${b.buy_zone ? `<div style="font-size:11px; color:#065f46; font-weight:700;">Buy Zone: ${escapeHtml(b.buy_zone)}</div>` : ''}
+                  ${b.target ? `<div style="font-size:11px; color:#854d0e; font-weight:700; margin-top:2px;">Target: ${escapeHtml(b.target)}</div>` : ''}
+                  <div style="margin-top:8px; font-size:10px; font-weight:800; color:#c2410c; text-transform:uppercase;">
+                    ⚡ View Chart & Setup ➔
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else if (boomingEl) {
+        boomingEl.style.display = 'none';
+      }
+
       document.getElementById('feed').innerHTML = localVerdicts.length ? 
+
         localVerdicts.slice().reverse().map(v => {
           const stratsList = v.strategies || [];
           const stratsAttr = escapeHtml(stratsList.join(','));
