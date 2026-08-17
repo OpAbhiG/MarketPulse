@@ -1,0 +1,9 @@
+C:\Users\Administrator\Downloads\indian_stock_agents\indian_stock_agents\scratch\script_fixed.js:226
+        document.getElementById('modalTitle').innerHTML = `<h3 style="color:#b91c1c; margin:0;">⚠️ CHART SYMBOL ERROR</h3>`;
+                                                               ^^^^^
+
+SyntaxError: Unexpected identifier 'style'
+    at wrapSafe (node:internal/modules/cjs/loader:1735:18)
+    at checkSyntax (node:internal/main/check_syntax:76:3)
+
+Node.js v24.13.1
