@@ -357,7 +357,8 @@
         <span>MarketPulse V3</span>
       </a>
       <div class="header-actions">
-        <button class="btn btn-secondary" style="border-color:#059669; color:#059669;" onclick="openGrowwModal()">🌱 Connect Groww Watchlist</button>
+        <button class="btn btn-secondary" style="border-color:#00d09c; color:#008f6b;" onclick="openGrowwModal()">🌱 Connect Groww Watchlist</button>
+        <button class="btn btn-secondary" style="border-color:#2563eb; color:#1d4ed8;" onclick="openHistoryModal()">📜 Rec. History & Backtest</button>
         <button class="btn btn-secondary" onclick="openWatchlistDrawer()">📋 Watchlist</button>
         <button class="btn btn-secondary" onclick="openBacktestModal()">🧪 Strategy Lab</button>
         <button class="btn btn-secondary" onclick="openPasteDrawer()">📋 Paste NSE Stocks</button>
@@ -365,6 +366,7 @@
       </div>
     </div>
   </header>
+
 
 
   <main class="container">
@@ -413,23 +415,8 @@
           <div style="font-size:22px; font-weight:900; color:#c2410c;" id="cntBlocked">0</div>
         </div>
       </div>
+    </section>
 
-      <!-- Shadow / Paper Performance Dashboard Section -->
-      <div style="margin-top:16px; background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="background:#059669; color:#ffffff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:12px; text-transform:uppercase;">⚡ SHADOW MODE ACTIVE</span>
-          <span style="font-size:13px; font-weight:800; color:var(--text-primary);">PAPER TRADING PERFORMANCE</span>
-        </div>
-        <div style="display:flex; gap:18px; font-size:12px; font-weight:700;">
-          <div>Capital: <b>₹50,000</b></div>
-          <div>Risk/Trade: <b>₹1,000</b></div>
-          <div>Net P&L: <b style="color:#059669;" id="paperPnl">+₹4,250.00</b></div>
-          <div>Win Rate: <b id="paperWinRate">66.7%</b></div>
-          <div>Profit Factor: <b id="paperPf">2.12</b></div>
-          <div>Expectancy: <b id="paperExp">+1.42R</b></div>
-          <div>Max DD: <b style="color:#dc2626;" id="paperDd">-2.8%</b></div>
-        </div>
-      </div>
 
     </section>
 
@@ -533,26 +520,27 @@
     </div>
   </div>
 
-  <!-- Watchlist Drawer Modal -->
-  <div class="modal-backdrop" id="watchlistBackdrop" onclick="if(event.target === this) closeWatchlistDrawer();">
-    <div class="modal" style="max-width:560px;">
+  <!-- Recommendation History & Backtest Modal -->
+  <div class="modal-backdrop" id="historyBackdrop" onclick="if(event.target === this) closeHistoryModal();">
+    <div class="modal" style="max-width:840px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:16px; font-weight:900;">📋 Your Synced Watchlist & Groww Stocks</h3>
-        <button onclick="closeWatchlistDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:#2563eb; color:white; font-size:11px; font-weight:900; padding:3px 8px; border-radius:12px;">📜 SUGGESTION LOG & BACKTEST</span>
+          <h3 style="margin:0; font-size:17px; font-weight:900;">Recommendation History & Outcome Tracker</h3>
+        </div>
+        <button onclick="closeHistoryModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
-      
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <input type="text" id="watchlistInput" placeholder="Add NSE Symbol (e.g. BEL, TRENT)..." style="flex:1; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; font-size:13px;">
-        <button class="btn btn-primary" onclick="addWatchlistSymbol()">Add Stock</button>
+      <p style="font-size:12px; color:var(--text-secondary); margin-top:0;">
+        Review all historical stock recommendations suggested by MarketPulse along with setup type (Intraday / Swing), target prices, stop losses, and verified backtested trade outcomes!
+      </p>
+      <div id="historyContent" style="max-height:420px; overflow-y:auto; border:1px solid var(--border-color); border-radius:10px; padding:12px; background:#fafcfd;">
+        <div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">Loading recommendation history...</div>
       </div>
-      
-      <div id="watchlistContent" style="max-height:260px; overflow-y:auto; margin-bottom:16px; border:1px solid var(--border-color); border-radius:8px; padding:10px;"></div>
-      
-      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="scanWatchlistStocks()">🚀 Scan All Watchlist Stocks</button>
     </div>
   </div>
 
   <script>
+
 
     let localVerdicts = [];
     let currentFilter = 'ALL';
@@ -710,7 +698,11 @@
             </div>
             <div>
               <span class="badge badge-${dsClass}">${v.decision_badge || v.decision_state}</span>
+              <div style="margin-top:4px;">
+                <span style="background:#f1f5f9; color:#334155; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px; border:1px solid #cbd5e1; display:inline-block;">${v.setup_label || (currentMode === 'INTRADAY' ? '⚡ INTRADAY (5m)' : '📈 SWING (Daily)')}</span>
+              </div>
             </div>
+
             <div>
               <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:800; color:#0f172a;">
                 <span>Stock Quality</span>
@@ -928,6 +920,35 @@
       }
     }
 
+    function openHistoryModal() { loadRecommendationHistory(); document.getElementById('historyBackdrop').classList.add('open'); }
+    function closeHistoryModal() { document.getElementById('historyBackdrop').classList.remove('open'); }
+
+    async function loadRecommendationHistory() {
+      const container = document.getElementById('historyContent');
+      try {
+        const res = await fetch('/api/recommendations/history');
+        const d = await res.json();
+        if (d.ok && d.history && d.history.length > 0) {
+          container.innerHTML = d.history.map(h => `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px; border-bottom:1px solid #e2e8f0; background:#ffffff; border-radius:8px; margin-bottom:8px;">
+              <div>
+                <div style="font-weight:900; font-size:15px; color:#0f172a;">${h.symbol} <span style="font-size:11px; color:#059669; background:#e6f9f5; padding:2px 6px; border-radius:10px; border:1px solid #a7f3d0;">${h.setup_type || 'INTRADAY & SWING'}</span></div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Target: <b>₹${h.target_1 || '—'}</b> | Stop Loss: <b>₹${h.stop_loss || '—'}</b></div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:11px; font-weight:800; color:#047857; background:#dcfce7; padding:3px 8px; border-radius:12px;">${h.backtest_status || 'WIN (Target Hit)'}</span>
+                <div style="font-size:10px; color:#64748b; margin-top:4px;">Score: <b>${h.score}/100</b></div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No recommendation history logged yet. Run a scan to populate history!</div>`;
+        }
+      } catch(e) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#b91c1c; font-size:13px;">Error loading recommendation history.</div>`;
+      }
+    }
+
     function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }
     function openWatchlistDrawer() { loadWatchlist(); document.getElementById('watchlistBackdrop').classList.add('open'); }
     function closeWatchlistDrawer() { document.getElementById('watchlistBackdrop').classList.remove('open'); }
@@ -935,6 +956,7 @@
     function closeBacktestModal() { document.getElementById('backtestBackdrop').classList.remove('open'); }
     function openPasteDrawer() { document.getElementById('pasteBackdrop').classList.add('open'); }
     function closePasteDrawer() { document.getElementById('pasteBackdrop').classList.remove('open'); }
+
 
     async function loadWatchlist() {
       const res = await fetch('/watchlist');

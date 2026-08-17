@@ -106,6 +106,18 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     winner = "Bull" if bull >= bear else "Bear"
     rationale = br[0] if winner == "Bull" and br else rr[0] if rr else "Technical momentum and market factors evaluated."
 
+    intra_score = intra_res["score"]
+    swing_score = swing_res["score"]
+    if intra_score >= 70 and swing_score >= 70:
+        setup_label = "⚡ INTRADAY & SWING"
+        setup_type = "BOTH"
+    elif intra_score > swing_score:
+        setup_label = "⚡ INTRADAY (5m)"
+        setup_type = "INTRADAY"
+    else:
+        setup_label = "📈 SWING (Daily)"
+        setup_type = "SWING"
+
     verdict_payload = {
         "symbol": symbol,
         "name": evidence.get("name"),
@@ -116,10 +128,13 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
         "verdict": verdict,
         "confidence": conf,
         "marketpulse_score": master_score,
-        "intraday_score": intra_res["score"],
+        "intraday_score": intra_score,
         "intraday_setup": intra_res["classification"],
-        "swing_score": swing_res["score"],
+        "swing_score": swing_score,
         "swing_setup": swing_res["classification"],
+        "setup_label": setup_label,
+        "setup_type": setup_type,
+
         "boom_score": boom_score,
         "boom_type": boom_type,
         "breakout_quality": boom_data["breakout_quality"],

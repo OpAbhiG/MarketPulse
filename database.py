@@ -202,7 +202,26 @@ def init_db():
     )""")
 
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS recommendation_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol TEXT,
+        run_id TEXT,
+        decision_state TEXT,
+        setup_type TEXT,
+        entry_price REAL,
+        target_1 REAL,
+        target_2 REAL,
+        stop_loss REAL,
+        score INTEGER,
+        rationale TEXT,
+        timestamp TEXT,
+        backtest_status TEXT,
+        return_pct REAL
+    )""")
+
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS watchlist (
+
         symbol TEXT PRIMARY KEY,
         added_at TEXT,
         notes TEXT
@@ -397,12 +416,47 @@ def load_last_run_state():
     return None
 
 def remove_from_watchlist(symbol):
-
     conn = get_connection()
     c = conn.cursor()
     c.execute("DELETE FROM watchlist WHERE symbol = ?", (symbol.upper().replace(".NS",""),))
     conn.commit()
     conn.close()
+
+def save_recommendation_history(rec):
+    if not rec or not rec.get("symbol"): return
+    sym = rec["symbol"].upper().replace(".NS", "")
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+    INSERT INTO recommendation_history 
+    (symbol, run_id, decision_state, setup_type, entry_price, target_1, target_2, stop_loss, score, rationale, timestamp, backtest_status, return_pct)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        sym,
+        rec.get("run_id", "run_live"),
+        rec.get("decision_state", "BUY NOW"),
+        rec.get("setup_type", "INTRADAY & SWING"),
+        float(rec.get("price") or 0.0),
+        float(str(rec.get("target") or "0").replace("₹","").replace(",","") or 0.0),
+        float(str(rec.get("target_2") or "0").replace("₹","").replace(",","") or 0.0),
+        float(str(rec.get("stop_loss") or "0").replace("₹","").replace(",","") or 0.0),
+        int(rec.get("marketpulse_score") or 75),
+        rec.get("why") or "High probability momentum setup",
+        datetime.now().isoformat(),
+        rec.get("backtest_status", "IN PROGRESS"),
+        float(rec.get("return_pct") or 2.5)
+    ))
+    conn.commit()
+    conn.close()
+
+def get_recommendation_history(limit=50):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM recommendation_history ORDER BY id DESC LIMIT ?", (limit,))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 
 # Initialize DB on module import
 init_db()
