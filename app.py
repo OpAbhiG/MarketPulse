@@ -314,11 +314,10 @@ def background_analysis_pipeline(custom_symbols=None):
         flat = []
         for cat in ["large", "mid", "small"]:
             flat.extend(univ_dict.get(cat, []))
-        if is_vercel:
-            flat = flat[:6]  # Fast batch for Vercel serverless execution limit
 
     add_log(f"Fetching evidence for {len(flat)} tickers...")
     evidences = data_sources.load_live_evidence(flat if flat else univ_dict)
+
 
     with STATE_LOCK:
         RUN_STATE["kpis"]["universe"] = len(evidences)
