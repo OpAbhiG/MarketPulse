@@ -18,12 +18,7 @@ def load_universe(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-def load_demo_evidence(folder):
-    out=[]
-    for p in sorted(Path(folder).glob("*.json")):
-        try: out.append(json.loads(p.read_text(encoding="utf-8")))
-        except Exception: pass
-    return out
+
 
 
 GROWW_SLUG_MAP = {
