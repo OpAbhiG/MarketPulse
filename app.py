@@ -275,6 +275,18 @@ def parse_pasted_stocks():
     symbols = data_sources.extract_nse_symbols(raw_text)
     return jsonify({"ok": True, "symbols": symbols, "count": len(symbols)})
 
+@app.route("/api/groww/import", methods=["POST"])
+def groww_import_route():
+    data = request.get_json(silent=True) or {}
+    raw_text = data.get("text") or data.get("groww_data") or ""
+    symbols = data_sources.extract_nse_symbols(raw_text)
+    imported = []
+    for sym in symbols:
+        database.add_to_watchlist(sym, notes="Imported from Groww Watchlist")
+        imported.append(sym)
+    return jsonify({"ok": True, "imported_symbols": imported, "count": len(imported), "watchlist": database.get_watchlist()})
+
+
 def background_analysis_pipeline(custom_symbols=None):
     with STATE_LOCK:
         run_id = f"run_{int(time.time())}"

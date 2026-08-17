@@ -26,46 +26,93 @@ def load_demo_evidence(folder):
     return out
 
 
+GROWW_SLUG_MAP = {
+    "bharat-electronics-ltd": "BEL",
+    "coal-india-ltd": "COALINDIA",
+    "trent-ltd": "TRENT",
+    "polycab-india-ltd": "POLYCAB",
+    "reliance-industries-ltd": "RELIANCE",
+    "tata-consultancy-services-ltd": "TCS",
+    "hdfc-bank-ltd": "HDFCBANK",
+    "icici-bank-ltd": "ICICIBANK",
+    "voltas-ltd": "VOLTAS",
+    "cdsl-ltd": "CDSL",
+    "clean-science-technology-ltd": "CLEAN",
+    "kaynes-technology-india-ltd": "KAYNES",
+    "bse-ltd": "BSE"
+}
+
 def extract_nse_symbols(text):
     import re
     if not text or not isinstance(text, str):
         return []
     
-    # 1. Look for explicit URL parameter symbol=SYMBOL
-    url_matches = re.findall(r'symbol=([A-Za-z0-9&\-_]+)', text)
+    extracted = []
     
-    # 2. Split text by common separators (newlines, commas, tabs, spaces, semicolons, quotes, brackets)
+    # 1. Groww URL extraction (e.g. https://groww.in/stocks/bharat-electronics-ltd)
+    groww_matches = re.findall(r'groww\.in/stocks/([A-Za-z0-9\-_]+)', text, re.IGNORECASE)
+    for slug in groww_matches:
+        slug_clean = slug.lower().strip()
+        if slug_clean in GROWW_SLUG_MAP:
+            extracted.append(GROWW_SLUG_MAP[slug_clean])
+        else:
+            # Fallback slug to symbol guessing
+            parts = slug_clean.replace("-ltd", "").replace("-limited", "").split("-")
+            symbol_guess = "".join([p.upper() for p in parts if len(p) > 0])
+            if len(symbol_guess) >= 2:
+                extracted.append(symbol_guess)
+
+    # 2. Look for explicit NSE URL parameter symbol=SYMBOL or equity/SYMBOL
+    url_matches = re.findall(r'symbol=([A-Za-z0-9&\-_]+)', text)
+    nse_url_matches = re.findall(r'equity/([A-Za-z0-9\-_]+)', text, re.IGNORECASE)
+    
+    # 3. Split text by common separators (newlines, commas, tabs, spaces, semicolons, quotes, brackets)
     raw_tokens = re.split(r'[\n\r\t,;:"\'()\[\]\s]+', text)
     
-    candidates = list(url_matches) + raw_tokens
-    seen = set()
-    cleaned = []
-    
-    # Blacklist non-symbol noise words commonly found in NSE page copy/paste
     blacklist = {
         "NSE", "BSE", "SYMBOL", "PRICE", "CHANGE", "VOLUME", "HIGH", "LOW", "OPEN", "CLOSE",
         "PREV", "TURNOVER", "MARKET", "CAP", "EQUITY", "DERIVATIVES", "INDEX", "NIFTY",
         "BANKNIFTY", "COMPANY", "LTP", "PCHG", "CHG", "BUY", "SELL", "QTY", "VAL", "VALUE",
-        "HTTP", "HTTPS", "WWW", "NSEINDIA", "COM", "GET", "QUOTES"
+        "HTTP", "HTTPS", "WWW", "NSEINDIA", "GROWW", "STOCKS", "COM", "GET", "QUOTES", "LIMITED", "LTD"
     }
+
+    # If explicit Groww or URL matches exist, return them cleanly
+    if extracted:
+        seen = set()
+        clean_extracted = []
+        for s in extracted:
+            c = s.strip().upper().replace(".NS", "")
+            if c and c not in seen and c not in blacklist:
+                seen.add(c)
+                clean_extracted.append(c)
+        if clean_extracted:
+            return clean_extracted
+
+
+    candidates = list(url_matches) + list(nse_url_matches) + raw_tokens
+    seen = set()
+    cleaned = []
 
     for item in candidates:
         if not item:
             continue
         # Strip trailing .NS or .BO
         sym = item.strip().upper()
+        if "GROWW" in sym or "TRADINGVIEW" in sym or "NSEINDIA" in sym:
+            continue
         if sym.endswith(".NS") or sym.endswith(".BO"):
             sym = sym[:-3]
         
         # Clean non-alphanumeric except hyphen & ampersand
         sym = re.sub(r'[^A-Z0-9&\-]', '', sym)
         
-        if len(sym) >= 2 and len(sym) <= 25 and sym not in blacklist and not sym.isdigit():
+        if len(sym) >= 2 and len(sym) <= 15 and sym not in blacklist and not sym.isdigit():
             if sym not in seen:
                 seen.add(sym)
                 cleaned.append(sym)
                 
     return cleaned
+
 
 
 def _pct(a,b): return round((a/b-1)*100,2) if a is not None and b else None

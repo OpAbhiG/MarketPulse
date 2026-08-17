@@ -283,6 +283,7 @@
         <span>MarketPulse V3</span>
       </a>
       <div class="header-actions">
+        <button class="btn btn-secondary" style="border-color:#059669; color:#059669;" onclick="openGrowwModal()">🌱 Connect Groww Watchlist</button>
         <button class="btn btn-secondary" onclick="openWatchlistDrawer()">📋 Watchlist</button>
         <button class="btn btn-secondary" onclick="openBacktestModal()">🧪 Strategy Lab</button>
         <button class="btn btn-secondary" onclick="openPasteDrawer()">📋 Paste NSE Stocks</button>
@@ -290,6 +291,7 @@
       </div>
     </div>
   </header>
+
 
   <main class="container">
 
@@ -437,19 +439,47 @@
     </div>
   </div>
 
-  <!-- Paste Stocks Modal -->
-  <div class="modal-backdrop" id="pasteBackdrop" onclick="if(event.target === this) closePasteDrawer();">
-    <div class="modal" style="max-width:600px;">
+  <!-- Groww Watchlist Sync Modal -->
+  <div class="modal-backdrop" id="growwBackdrop" onclick="if(event.target === this) closeGrowwModal();">
+    <div class="modal" style="max-width:640px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;">📋 Paste NSE Stocks Text</h3>
-        <button onclick="closePasteDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="background:#059669; color:white; font-size:11px; font-weight:900; padding:3px 8px; border-radius:12px;">🌱 GROWW INTEGRATION</span>
+          <h3 style="margin:0; font-size:16px; font-weight:900;">Connect & Sync Groww Watchlist</h3>
+        </div>
+        <button onclick="closeGrowwModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
       </div>
-      <textarea id="pasteInput" placeholder="Paste raw text or symbols..." style="width:100%; height:120px; padding:10px; border:1px solid var(--border-color); border-radius:8px; font-size:13px; font-family:monospace; margin-bottom:12px;"></textarea>
-      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="processPastedText()">🚀 Analyze Pasted Symbols</button>
+      <p style="font-size:12px; color:var(--text-secondary); margin-top:0;">
+        Paste your Groww Stock URLs (e.g. <code>https://groww.in/stocks/bharat-electronics-ltd</code>), Groww CSV export text, or raw Groww watchlist copy to automatically sync Groww stocks into MarketPulse Watchlist!
+      </p>
+      <textarea id="growwInput" placeholder="Paste Groww stock URLs (e.g. https://groww.in/stocks/bharat-electronics-ltd) or Groww watchlist text..." style="width:100%; height:140px; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-size:12px; font-family:monospace; margin-bottom:14px;"></textarea>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-primary" style="flex:1; justify-content:center; background:linear-gradient(135deg, #059669, #047857);" onclick="importGrowwWatchlist()">🌱 Import & Sync Groww Watchlist</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Watchlist Drawer Modal -->
+  <div class="modal-backdrop" id="watchlistBackdrop" onclick="if(event.target === this) closeWatchlistDrawer();">
+    <div class="modal" style="max-width:560px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:16px; font-weight:900;">📋 Your Synced Watchlist & Groww Stocks</h3>
+        <button onclick="closeWatchlistDrawer()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input type="text" id="watchlistInput" placeholder="Add NSE Symbol (e.g. BEL, TRENT)..." style="flex:1; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; font-size:13px;">
+        <button class="btn btn-primary" onclick="addWatchlistSymbol()">Add Stock</button>
+      </div>
+      
+      <div id="watchlistContent" style="max-height:260px; overflow-y:auto; margin-bottom:16px; border:1px solid var(--border-color); border-radius:8px; padding:10px;"></div>
+      
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="scanWatchlistStocks()">🚀 Scan All Watchlist Stocks</button>
     </div>
   </div>
 
   <script>
+
     let localVerdicts = [];
     let currentFilter = 'ALL';
     let currentMode = 'INTRADAY';
@@ -791,7 +821,32 @@
       }, 100);
     }
 
+    function openGrowwModal() { document.getElementById('growwBackdrop').classList.add('open'); }
+    function closeGrowwModal() { document.getElementById('growwBackdrop').classList.remove('open'); }
 
+    async function importGrowwWatchlist() {
+      const text = document.getElementById('growwInput').value;
+      if (!text) return;
+      const res = await fetch('/api/groww/import', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+      const d = await res.json();
+      if (d.ok && d.imported_symbols) {
+        closeGrowwModal();
+        openWatchlistDrawer();
+        if (d.imported_symbols.length > 0) {
+          triggerStart(d.imported_symbols);
+        }
+      }
+    }
+
+    async function scanWatchlistStocks() {
+      const res = await fetch('/watchlist');
+      const d = await res.json();
+      if (d.ok && d.watchlist && d.watchlist.length > 0) {
+        const syms = d.watchlist.map(x => x.symbol);
+        closeWatchlistDrawer();
+        triggerStart(syms);
+      }
+    }
 
     function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }
     function openWatchlistDrawer() { loadWatchlist(); document.getElementById('watchlistBackdrop').classList.add('open'); }
