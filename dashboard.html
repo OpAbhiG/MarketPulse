@@ -369,12 +369,17 @@
         <button class="toggle-btn active" onclick="setFilter('ALL', this)">ALL</button>
         <button class="toggle-btn" onclick="setFilter('BUY NOW', this)">🟢 BUY NOW</button>
         <button class="toggle-btn" onclick="setFilter('BUY ON CONFIRMATION', this)">🟡 CONFIRMATION</button>
+        <button class="toggle-btn" onclick="setFilter('BUDGET', this)">💰 BUDGET STOCKS (&lt; ₹500)</button>
         <button class="toggle-btn" onclick="setFilter('WATCH', this)">🔵 WATCH</button>
         <button class="toggle-btn" onclick="setFilter('AVOID', this)">🔴 AVOID</button>
       </div>
     </div>
 
+    <!-- ⭐ TOP RECOMMENDATION SPOTLIGHT BANNER -->
+    <div id="bestPickSpotlight" style="display:none; margin-bottom:20px;"></div>
+
     <!-- 🔴 STOCKS TO AVOID Section -->
+
     <div class="feed-card" id="avoidPanel" style="display:none; background:#fef2f2; border-color:#fecaca;">
       <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; color:#b91c1c; text-transform:uppercase;">
         🔴 Stocks to Avoid (Explicit Rejection Rationale)
@@ -503,6 +508,55 @@
       }
 
       localVerdicts = s.verdicts || [];
+
+      // Render Best Pick Spotlight Banner
+      const spotlightEl = document.getElementById('bestPickSpotlight');
+      const nonAvoid = localVerdicts.filter(x => x.decision_state !== 'AVOID' && x.decision_state !== 'BLOCKED');
+      const bestPick = nonAvoid.length > 0 
+        ? nonAvoid.sort((a,b) => (b.marketpulse_score || 0) - (a.marketpulse_score || 0))[0]
+        : (localVerdicts[0] || null);
+
+      if (bestPick) {
+        spotlightEl.style.display = 'block';
+        const isBudget = (bestPick.price || 9999) <= 500;
+        spotlightEl.innerHTML = `
+          <div style="background:linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); border:2px solid #10b981; border-radius:14px; padding:18px 22px; box-shadow:0 4px 12px rgba(16,185,129,0.15);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="background:#10b981; color:white; font-size:11px; font-weight:900; padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">⭐ TOP RECOMMENDATION OF THE DAY</span>
+                ${isBudget ? `<span style="background:#fef3c7; color:#b45309; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; border:1px solid #fde68a;">💰 BUDGET PICK (&lt; ₹500)</span>` : ''}
+              </div>
+              <span class="badge badge-${(bestPick.decision_state || 'BUY').toLowerCase().replace(/\s+/g, '-')}">${bestPick.decision_badge || bestPick.decision_state}</span>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="font-size:22px; font-weight:900; color:#0f172a; cursor:pointer;" onclick="openDetailModal('${bestPick.symbol}')">${bestPick.symbol} <span style="font-size:13px; font-weight:700; color:#64748b;">(${bestPick.sector || 'NSE Equity'})</span></div>
+                <div style="font-size:12px; font-weight:700; color:#047857; margin-top:4px;">✓ ${bestPick.why || (bestPick.why_buy || [])[0] || 'Strong momentum breakout setup'}</div>
+              </div>
+              
+              <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+                <div style="text-align:center; background:#ffffff; padding:8px 14px; border-radius:8px; border:1px solid #a7f3d0;">
+                  <span style="font-size:10px; color:#64748b; font-weight:700; display:block;">CURRENT PRICE</span>
+                  <span style="font-size:16px; font-weight:900; color:#0f172a;">₹${bestPick.price ?? '—'}</span>
+                </div>
+                <div style="text-align:center; background:#ffffff; padding:8px 14px; border-radius:8px; border:1px solid #a7f3d0;">
+                  <span style="font-size:10px; color:#047857; font-weight:700; display:block;">TARGET 1</span>
+                  <span style="font-size:16px; font-weight:900; color:#047857;">₹${bestPick.target || '—'}</span>
+                </div>
+                <div style="text-align:center; background:#ffffff; padding:8px 14px; border-radius:8px; border:1px solid #fecaca;">
+                  <span style="font-size:10px; color:#b91c1c; font-weight:700; display:block;">STOP LOSS</span>
+                  <span style="font-size:16px; font-weight:900; color:#b91c1c;">₹${bestPick.stop_loss || '—'}</span>
+                </div>
+                <button class="btn btn-primary" onclick="openDetailModal('${bestPick.symbol}')">🚀 Inspect Chart & Plan ↗</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        spotlightEl.style.display = 'none';
+      }
+
       renderFeed();
     }
 
@@ -518,13 +572,16 @@
       }
 
       // Flexible Category Filtering
-      if (currentFilter !== 'ALL') {
+      if (currentFilter === 'BUDGET') {
+        filtered = filtered.filter(x => (x.price || 9999) <= 500 && x.decision_state !== 'AVOID');
+      } else if (currentFilter !== 'ALL') {
         const cf = currentFilter.toUpperCase().replace(/^[^A-Z]+/, '').trim();
         filtered = filtered.filter(x => {
           const ds = (x.decision_state || '').toUpperCase().trim();
           return ds === cf || ds.includes(cf) || cf.includes(ds);
         });
       }
+
 
       if (filtered.length === 0) {
         feedEl.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No stocks match category filter "${currentFilter}" under ${currentMode} mode.</div>`;

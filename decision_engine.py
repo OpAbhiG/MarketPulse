@@ -77,14 +77,15 @@ def evaluate_trading_decision(evidence, verdict_payload, market_regime=None):
         decision_state = "BLOCKED"
         decision_badge = "🟠 BLOCKED"
         action = "DO NOT TRADE — RISK GATE BLOCKED"
-    elif master_score >= 80 and verdict == "BUY" and validated and conf >= 7 and rr >= 1.5 and not is_ext:
+    elif master_score >= 75 and verdict == "BUY" and validated and conf >= 7 and rr >= 1.5 and not is_ext:
         decision_state = "BUY NOW"
         decision_badge = "🟢 BUY NOW"
         action = "BUY ENTRY CONFIRMED"
-    elif master_score >= 75 and (verdict in ("BUY", "WATCH") or boom_type != "NORMAL") and not is_ext:
+    elif master_score >= 70 and (verdict in ("BUY", "WATCH") or boom_type != "NORMAL") and not is_ext:
         decision_state = "WAIT — CONFIRMATION REQUIRED"
         decision_badge = "🟡 WAIT — CONFIRMATION REQUIRED"
         action = f"WAIT FOR CONFIRMATION ABOVE {trigger_price}"
+
     elif master_score >= 65 and not is_ext:
         decision_state = "WATCH"
         decision_badge = "🔵 WATCH"

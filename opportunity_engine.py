@@ -64,6 +64,19 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
     top_intraday = intraday_candidates[0] if (intraday_candidates and intraday_candidates[0].get("decision_state") == "BUY NOW") else None
     top_swing = swing_candidates[0] if (swing_candidates and swing_candidates[0].get("decision_state") == "BUY NOW") else None
 
+    # Best Pick Overall (Highest Master Score / EV setup that is not AVOID)
+    eligible = [v for v in verdicts_list if v.get("decision_state") not in ("AVOID", "BLOCKED")]
+    if eligible:
+        eligible.sort(key=lambda x: (x.get("marketpulse_score", 0), x.get("expected_value", 0)), reverse=True)
+        best_pick = eligible[0]
+    else:
+        best_pick = max(verdicts_list, key=lambda x: x.get("marketpulse_score", 0)) if verdicts_list else None
+
+    # Budget Stocks (Priced under ₹500, non-AVOID, sorted by Master Score)
+    budget_candidates = [
+        v for v in verdicts_list 
+        if (v.get("price") or 9999) <= 500 and v.get("decision_state") != "AVOID"
+    ]
     top_boom = max(verdicts_list, key=lambda x: x.get("boom_score", 0)) if verdicts_list else None
     best_rr = max(verdicts_list, key=lambda x: x.get("rr_ratio", 0)) if verdicts_list else None
     safest = max(verdicts_list, key=lambda x: x.get("data_quality_score", 0)) if verdicts_list else None
@@ -76,6 +89,8 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
         "top_boom": top_boom,
         "best_rr": best_rr,
         "safest_setup": safest,
+        "best_pick": best_pick,
+        "budget_stocks": budget_candidates,
         "buy_now_count": len(buy_now_list),
         "confirmation_count": len(confirmation_list),
         "watch_count": len(watch_list),
@@ -84,3 +99,6 @@ def rank_market_opportunities(verdicts_list, min_conviction_threshold=75):
         "has_opportunity": has_buy_now,
         "opportunities_summary": f"{len(buy_now_list)} BUY NOW setup(s) active" if has_buy_now else "NO HIGH-CONVICTION BUY TODAY"
     }
+
+
+

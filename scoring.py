@@ -68,18 +68,19 @@ def deterministic_evaluate(evidence, market_regime=None, sector_data=None, confi
     net = round(bull - bear, 1)
 
     # 3. Master Score /100 Breakdown (10 Components)
-    tech_comp = 20 if trend == "up" and (sma or 0) > 0 else 12
-    vol_comp = 15 if rvol >= 1.5 else 8
-    breakout_comp = 15 if (pos or 50) >= 80 and not ext_res["is_too_extended"] else 8
-    trend_comp = 10 if trend == "up" else 5
-    rs_comp = 10 if sector_data and sector_data.get("is_outperforming") else 5
-    sec_comp = 10 if sector_data and sector_data.get("sector_20d_return", 0) > 1.0 else 5
-    reg_comp = 5 if market_regime and market_regime.get("risk_mode") in ("STRONG_RISK_ON", "RISK_ON") else 3
-    liq_comp = 5 if (p.get("volume") or 100000) >= 50000 else 1
+    tech_comp = 20 if trend == "up" and (sma or 0) >= 0 else 14 if trend == "up" else 10
+    vol_comp = 15 if rvol >= 1.5 else 12 if rvol >= 1.0 else 8
+    breakout_comp = 15 if (pos or 50) >= 75 and not ext_res["is_too_extended"] else 12 if (pos or 50) >= 50 else 8
+    trend_comp = 10 if trend == "up" else 6
+    rs_comp = 10 if (pos or 50) >= 70 or (sector_data and sector_data.get("is_outperforming")) else 6
+    sec_comp = 10 if (day_chg or 0) >= 0.0 or (sector_data and sector_data.get("sector_20d_return", 0) > 0) else 6
+    reg_comp = 5 if market_regime is None or market_regime.get("risk_mode") != "RISK_OFF" else 2
+    liq_comp = 5 if (p.get("volume") or 100000) >= 50000 else 2
     rr_comp = 5
     dq_comp = 5
 
     master_score = clamp(tech_comp + vol_comp + breakout_comp + trend_comp + rs_comp + sec_comp + reg_comp + liq_comp + rr_comp + dq_comp)
+
 
     # 4. BOOM Score
     boom_data = calculate_boom_score(evidence, market_regime, sector_data)
